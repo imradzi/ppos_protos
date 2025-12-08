@@ -1,0 +1,10 @@
+syntax = "proto3";
+
+import "ppos.proto";
+package CacheProto;
+
+
+message Cache {
+  map<string, PPOS.StockCategoryList> map_stock_category = 1;
+}
+

@@ -1,0 +1,170 @@
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package AuthDatabaseProto;
+
+// message ServerSetting {
+//     enum PortSetting {
+//         Filler = 0;
+//         WebPortNo = 9090;
+//         GRPCPortNo = 50066;
+//     }
+// }
+
+
+message BoolValue {
+    bool value=1;
+}
+
+message StringValue {
+    string value=1;
+}
+
+message TypeRecord {
+    string id=1;
+    TypeRecord parent=2;
+    string code=3;
+    string name=4;
+    string limit_value=5;
+    string default_value=6;
+}
+
+message TypeList {
+    repeated TypeRecord list=1;
+}
+
+message DatabaseRole {
+    string db_name=1;
+    TypeRecord roles=2;
+}
+
+message User {
+    string id=1;
+    string email=2;
+    string name=3;
+    string ic=4;
+    string address=5;
+    string tel_no=6;
+    string description=7;
+    google.protobuf.Timestamp time_registered=8;
+    google.protobuf.Timestamp time_accepted=9;
+    repeated TypeRecord user_roles=10;
+    repeated TypeRecord user_types=11;
+    repeated DatabaseRole user_db_roles=12;
+}
+
+message UserList {
+    repeated User list=1;
+}
+
+message IdToken {
+    string email=1;
+    string token=2;
+}
+
+message Session {
+    User user=1;
+    string db_name=2;
+    string trans_name=3;
+    string app_name=4;
+    string device_token=5;
+    string message=6;
+    string chat_key=7;
+    string group_filter=8;
+}
+
+message ApproveEmail {
+    string email_to_approve=2;
+}
+
+message DBName {
+    string db_name=1;
+    string folder_name=2;
+    string app_name=3;
+    TypeRecord privacy_type=4;
+    string owner_email=5;
+    string master_name=8;
+    string trans_name=9;
+    string group_filter=10;
+}
+
+message DBList {
+    repeated DBName list = 2;
+}
+
+message ShareDBWith {
+    DBName db=1;
+    repeated string emails=2;
+}
+
+message Config {
+    string version=1;
+    DBName db=2;
+    User user=3;
+    string chat_key=4;
+    repeated DBName db_list=5;
+    repeated User require_approval=6;
+    repeated TypeRecord privacy_list=7;
+    repeated TypeRecord db_roles_list=8;
+    repeated TypeRecord user_roles_list=10;
+}
+
+message ParticipantList {
+    repeated User list=2;
+}
+
+message SearchKey {
+    string code=1;
+    string name=2;
+    string description=3;
+    string all=4;
+}
+
+message SearchUser {
+    bool admin_only=1;
+    string partial_text=2;
+}
+
+message Dependent {
+    string primary_email=1;
+    User user=2;
+}
+
+service AuthenticationService {
+    rpc RegisterSession(User) returns (User) {}
+    rpc UnRegisterSession(User) returns (BoolValue) {}
+    rpc UnRegisterAllSession(User) returns (BoolValue) {}
+    rpc ValidateToken(IdToken) returns (BoolValue) {}
+    rpc GetConfig(Config) returns (Config) {}
+    rpc RegisterUser(User) returns (BoolValue) {}
+    rpc SaveUser(User) returns (BoolValue) {}
+    rpc ApproveUser(ApproveEmail) returns (BoolValue) {}
+    rpc GetUserList(SearchUser) returns (UserList) {}
+    rpc PromoteUserToAdmin(User) returns (BoolValue) {}
+    rpc RevokeUserAdmin(User) returns (BoolValue) {}
+    rpc PromoteUserToDBAdmin(User) returns (BoolValue) {}
+    rpc RevokeUserDBAdmin(User) returns (BoolValue) {}
+    rpc PromoteUserToDBAccount(User) returns (BoolValue) {}
+    rpc RevokeUserDBAccount(User) returns (BoolValue) {}
+    rpc PromoteUserToDBOwner(User) returns (BoolValue) {}
+    rpc RevokeUserDBOwner(User) returns (BoolValue) {}
+    
+    rpc GetTypeList(StringValue) returns (TypeList) {}
+
+    rpc CreateDatabase(DBName) returns (DBList) {}
+    rpc DeleteDatabase(DBName) returns (DBList) {}
+
+    rpc ShareDB(ShareDBWith) returns (BoolValue) {}
+    rpc GetDBList(DBList) returns (DBList) {}
+
+    rpc SetApplicationName(DBName) returns (BoolValue) {}
+
+    rpc SaveDependent(Dependent) returns (Dependent) {}
+    rpc GetDependentList(SearchKey) returns (ParticipantList) {}
+
+    rpc SaveParticipant(Dependent) returns (Dependent) {}
+    rpc GetParticipantList(SearchKey) returns (ParticipantList) {}
+
+}

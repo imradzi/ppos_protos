@@ -1,0 +1,1529 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package PPOS;
+
+message Void {
+    string session_key=1;
+    string group_filter=2;
+}
+
+message StringList {
+    repeated string list=1;
+}
+
+message BinaryData {
+        bytes data=1;
+}
+message wpObject {
+    string ops=1;
+    string method=2;
+    string search_param=3;
+    string option=4;
+    bool is_new_object=5;
+    bool is_deleted=6;
+    google.protobuf.Timestamp last_update_date_time=8;
+	repeated string fts_column=9;
+    string session_key=10;
+}
+
+message LexiconRecord {
+	wpObject base=1;
+	string id=2;
+	string code=3;
+	string name=4;
+    string parent_id=5;
+    string synonym_id=6;
+    string table_name=7;
+}
+
+message TypeRecord {
+	LexiconRecord base=1;
+    string limit_value=2;
+	string default_value=3;
+
+}
+
+message StockTransactionReference {
+    wpObject base=1;
+    string stock_id=2;
+    string transaction_id=3;
+}
+
+message TypeRecordList {
+    repeated TypeRecord list=1;
+}
+
+message PriceCategoryRecord {
+	TypeRecord base=1;
+    double price=2;
+}
+message EntityRecord {
+	wpObject base=1;
+    string id=2;
+    string doc_id=3;
+    string global_id=4;
+    int64 db_link_id=5;
+    LexiconRecord register_at=6;
+    google.protobuf.Timestamp register_date=7;
+    repeated LexiconRecord attributes=8;
+    repeated string attribute_set=9;
+	string content=10;
+}
+
+message PackingRecord {
+	wpObject base=1;
+    string stock_id=2;
+    LexiconRecord pack_type=3;
+    string pack_description=4;
+    double packsize = 5;
+    double selling_price = 6;
+	double membership_price = 7;
+    double max_discount_percentage = 8;
+    double percent_above_cost = 9;
+    repeated PriceCategoryRecord price_by_category=10;
+    string barcode=11;
+}
+
+message StockTaxAndCharges {
+	wpObject base=1;
+    TypeRecord type=2;
+    google.protobuf.Timestamp from_date=3;
+	google.protobuf.Timestamp to_date=4;
+    double percentage=5;
+	double fixed_value=6;
+}
+message SalesPromotionRecord {
+	wpObject base=1;
+    string stock_id=2;
+    double discount_percentage = 3;
+    google.protobuf.Timestamp from_date=4;
+    google.protobuf.Timestamp to_date=5;
+}
+
+message ComponentRecord {
+	wpObject base=1;
+    string stock_id=2;
+    string component_id=3;
+    PackingRecord pack=4;
+    double quantity = 5;
+    double cost_factor = 6;
+}
+
+message LocationRecord {
+	EntityRecord base=1;
+}
+
+message CompanyRecord {
+	LocationRecord base=1;
+    double discount=2;
+    double credit_term=3; 
+	double debit_term=4; 
+	double credit_limit=5;
+    string purpose_of_sales=6;
+    bool is_taxable=7;
+}
+
+message PersonRecord {
+	CompanyRecord base=1;
+	google.protobuf.Timestamp dob=2;
+    LexiconRecord blood_type=3;
+	LexiconRecord race=4; 
+	LexiconRecord religion=5;
+	LexiconRecord marital_status=6;
+	LexiconRecord gender=7;
+	LexiconRecord job=8;
+}
+
+message StockRecord {
+	EntityRecord base = 1;
+    string dispensing_instruction=2;
+	string drug_warning=3;
+    string no_of_images=4;
+
+    double reorder_level=5;
+	double reorder_qty=6;
+
+    bool is_poison=7;
+	bool is_pseudo_poison=8;
+	bool is_stock_item=9;
+
+    double weighted_avg_cost=10; 
+    double latest_cost=11;
+	double max_cost=12;
+    double average_cost_ppos=13;
+    double reward_point_factor=14;
+    double qoh=15; 
+	double stock_value=16; 
+	double qoh_hold=17;
+    double promotional_discount=18;
+    bool to_convert_packsize=19;
+    string fcc=20;
+    string display_name=21;
+
+    LexiconRecord type=22;
+    LexiconRecord default_selling_pack=23;
+    LexiconRecord default_purchase_pack=24;
+    string min_profit_margin=25;
+    string synonym_to=26;
+    repeated PackingRecord pack_records=27;
+    repeated StockTaxAndCharges tax_and_charges=28;
+    repeated SalesPromotionRecord sales_promotion_list=29;
+    repeated ComponentRecord component_list=30;
+    repeated LexiconRecord shelf_list=31;
+    repeated PersonRecord sales_reps=32;
+    string qoh_string=33; //q+l format
+    repeated StockCategoryRecord category_list=34;
+    repeated string category_hierachy = 35; // for filter matching during print by category. 
+    int32 fav_rating=36;
+    string parent_id=37;
+}
+
+message StockReceiveBatch {
+    wpObject base=1;
+    string receive_id=2;
+    string batch_no=3;
+    google.protobuf.Timestamp expiry_date=4;
+    double qoh=5;
+    string ref_no=6;
+    string supplier_name=7;
+    string stock_id=8;
+    bool has_expiry=9;
+}
+
+message StockReceiveBatchList {
+    EntityRecord base=1;
+    repeated StockReceiveBatch list=2;
+}
+
+message StockTransactionRecord {
+    StockRecord base=1;
+    string pack=2;
+    string bonus_pack=3;
+    double quantity=4;
+    double bonus_qty=5;
+    double transaction_price=6; 
+    double list_price=7; 
+    double discount_amount=8; 
+    double srp=9;
+    double cost_value=10; 
+    double transaction_value=11; 
+    double tax_value=12;
+    bool is_selling_price_manually_changed=13;
+    google.protobuf.Timestamp expiry_date=14;
+    string batch_no=15;
+    string receive_detail_id=16;
+    string promoter_id=17;
+    string where=18;
+    bool has_expiry=19;
+    string instruction=20;
+    bool update_all_selling_price=21;
+    double pack_size=22; // for stock with pack size
+}
+
+message HistoricalStockRecord {
+    StockTransactionRecord base=1;
+    string transaction_id=2;
+    google.protobuf.Timestamp transaction_date=3;
+    string ref_no=4;
+    string location=6;
+    string who=7;
+    string reason=8;
+    string sales_rep=9;
+    double qoh_balance=10;
+    google.protobuf.Timestamp date_created=11;
+    string batch_no=12;
+    google.protobuf.Timestamp expiry_date=13;
+
+}
+
+message DatabaseRecord {
+	LexiconRecord base=1;
+    string transaction_name=2;
+    string db_name=3;
+    string script_folder=4;
+    string www_folder=5;
+    google.protobuf.Timestamp expiry_date=6;
+    string group_filter=7;
+    string uuid=8;
+}
+
+message TerminalRecord {
+	LexiconRecord base=1;
+    string location=2;
+}
+
+message UserRecord {
+	PersonRecord base=1;
+    repeated int64 user_roles=2; 
+
+    string encrypted_password=3;
+    string session_id=4;
+    google.protobuf.Timestamp register_date=5;
+    string menu_xml=6;
+    string application_name=7;
+    string schema_name=8;
+    string start_up_module=9;
+    repeated string allowed_modules=10;
+
+    string max_discount_allowed=11;
+    repeated LexiconRecord roles=12;
+    repeated LexiconRecord screens=13;
+    repeated string roles_set=14;
+	repeated string screen_set=15;
+    repeated string allowed_db_set=16;
+    repeated LexiconRecord allowed_db=17;
+}
+
+
+message LoginSessionRecord {
+	wpObject base=1;
+    DatabaseRecord database_selected=2;
+    TerminalRecord terminal=3;
+    UserRecord user=4;
+    bool need_update=5;
+    google.protobuf.Timestamp expiry_date=6;
+    google.protobuf.Timestamp time_in=7;
+    google.protobuf.Timestamp time_out=8;
+    int64 id = 9;  // sessionID
+    string application_name=10;
+    string outlet_code=11;
+    string outlet_name=12;
+    string remark=13;
+    string server_name=14;
+    string server_os_version=15;
+	string server_app_version=16;
+	string client_os_version=17;
+	string client_app_version=18;
+    string system_user=19;
+    string working_folder=20;
+}
+
+enum EventType {
+    ev_unassigned = 0;
+    ev_error=1;
+    ev_server=2;
+    ev_entity=3;
+    ev_entity_relationship=4;
+    ev_stock=5;
+    ev_membership=6;
+    ev_membership_point=7;
+    ev_customer=8;
+    ev_company=9;
+    ev_promoter=10;
+    ev_salesrep=11;
+    ev_passport=12;
+    ev_sales=13;
+    ev_sales_hold=14;
+    ev_sales_order=15;
+    ev_sales_quotation=16;
+    ev_sales_wholesales=17;
+    ev_sales_wholesales_hold=18;
+    ev_purchase=19;
+    ev_purchase_order=20;
+    ev_purchase_hold=21;
+    ev_reorder=22;
+    ev_accounting=23;
+    ev_chat=24;
+    ev_info=25;
+    ev_num_event=26;
+};
+
+
+message ServerEventMessage {
+    message MessageRecord {
+	    string code=1;
+	    string key=2;
+	    string value=3;
+    }
+
+	wpObject base=1;
+    EventType type=2;
+    repeated MessageRecord messages=3;
+}
+
+message WorkShiftRecord {
+    wpObject base=1;
+    string id=2;
+    google.protobuf.Timestamp time_end=3;
+    google.protobuf.Timestamp time_start=4;
+    LoginSessionRecord closed_by=5;
+    LoginSessionRecord created_by=6;
+    double closing_balance=7;
+    double opening_balance=8;
+}
+
+//----------------------
+
+enum UserType {
+	UserTypeAccount=0;
+	UserTypeAdmin=1;
+	UserTypeCustomer=2;
+	UserTypeMember=3;
+	UserTypePromoter=4;
+	UserTypeSalesRep=5;
+	UserTypeStockist=6;
+	UserTypeSupplier=7;
+}
+
+message StockSearchParam {
+    int64 stock_type=1;
+    int64 poison_category=2;
+    bool is_poison=3;
+    bool is_pseudo_poison=4;
+    bool show_cost=5;
+}
+
+message Parameter {
+    wpObject base=1;
+    string command_name=2;
+    string table_name=3;
+    string id=4;
+    string int_param=5;
+    string data=6;
+    StockSearchParam stock_param=7;
+    int64 limit=8;
+    int64 offset=9;
+}
+
+message SearchParam {
+    wpObject base=1;
+    string search=2;
+    string order_by=3;
+    bool is_consumption=4;
+    bool is_low_stock=5;
+    string key=6;
+    string value=7;
+    string type=8;
+    string id=9;
+    string method2=10;
+    string option2=11;
+    string column=12;
+}
+
+message SearchItem {
+    wpObject base=1;
+    string id=2;
+    string code=3;
+    string name=4;
+    double price=5;
+    string gstcode=6;
+}
+
+message SearchItemList {
+    wpObject base=1;
+    string id=2;
+    repeated SearchItem list=3;
+}
+
+message RequestReport {
+    google.protobuf.Timestamp from_date=1;
+	google.protobuf.Timestamp to_date=2;
+    string type_of_sales=3;
+}
+
+message RequestInfoRecord {
+    wpObject base=1;
+    string question=2;
+    string answer=3;
+    string user_id=4;
+    google.protobuf.Timestamp from_date=5;
+    google.protobuf.Timestamp to_date=6;
+}
+
+message LabelInputParam {
+    wpObject base=1;
+    string label=2;
+	string type=3;
+	string param=4;
+	string value=5;
+	string start_flag=6;
+	string lookup_ops=7;
+	string list=8;
+	string default_value=9;
+    bool use_time_as_it_is=10;
+    string sql=11;
+}
+
+message MenuDialogParam {
+    wpObject base=1;
+    string title=2;
+    repeated LabelInputParam param_list=3;
+}
+
+message MenuActionParam {
+    wpObject base=13;
+    string name=1;
+	string script_name=2;
+	string output_type=3;
+	string orientation=4;
+	string cmd_before=5;
+	string cmd_after=6;
+	string user_param=7;
+	string sql_link=9;
+    string sheet_type=10;
+    MenuDialogParam dialog=11;
+    string result=12;
+}
+
+message GetFileParameter {
+	string command=1;
+	oneof Param {
+		string remote_file_name=2;
+		SearchParam search_parameter=3;
+		RequestReport req_report=4;
+		RequestInfoRecord req_info=5;
+		MenuActionParam menu_action=6;
+	}
+	wpObject base=7;
+    string session_key=8;
+}
+
+message ReturnStatus {
+	int64 id =1;
+	string description=2;
+}
+
+message SQLCommandRecord {
+    wpObject base=1;
+    string sql=2;
+    string sql_select=3;
+    string sql_count=4;
+}
+
+message SQLCommand {
+    wpObject base=1;
+	string command=2;
+}
+
+message SQLColumnDefinition {
+	enum Type {
+		INTEGER=0;
+		DOUBLE=1;
+		DATE=2;
+		STRING=3;
+	}
+	Type type=1;
+	string name=2;
+}
+
+
+message SQLColumn {
+	oneof data {
+		int64 int_value=1;
+		double double_value=2;
+		string string_value=3;
+		bytes binary_value=4;
+		bool is_null=5;
+	}
+}
+
+message SQLRow {
+	repeated SQLColumn columns=1;
+}
+
+message SQLResult {
+	repeated SQLColumnDefinition column_definitions=1;
+	repeated SQLRow rows=2;
+}
+
+message StringRow {
+	repeated string data = 1;
+}
+
+message AvailableDB {
+	int64 id=2;
+	string code=3;
+	string name=4;
+	bool is_shared_master=5;
+	string master_db=6;
+	string trans_db=7;
+    string group_filter=8;
+    google.protobuf.Timestamp expiry_date=9;
+    string uuid=10;
+}
+
+message AvailableDBList {
+	repeated AvailableDB list=1;
+}
+
+message AvailableServer {
+	int64 id=1;
+	string code=2;
+    string host_name=3;
+    string port_no=4;
+	string name=5;
+	string master_db=6;
+	string trans_db=7;
+    string group_filter=8;
+    google.protobuf.Timestamp expiry_date=9;    
+}
+
+message AvailableServerList {
+	repeated AvailableServer list=1;
+}
+
+message InterchangeData {
+	string session_key = 1;
+	bytes serialized = 2;
+	string object_type=3;
+}
+
+message StringData {
+	string session_key = 1;
+	string string = 2;
+}
+
+message IdParameterWithRating {
+	string session_key = 1;
+	string string = 2;
+    bool order_by_favorite = 3;
+}
+
+message ReturnDate {
+	google.protobuf.Timestamp date=1;
+}
+
+message StringPair {
+    string key=1;
+    string value=2;
+}
+
+message StringPairParameter {
+    string key=1;
+    string value=2;
+    string session_key=3;
+}
+
+message StringPairList {
+    repeated StringPair list=1;
+}
+
+message MessageLayer {
+    int32 layer=1;  
+    repeated string messages=2;
+}
+
+message MessageRecord {
+    wpObject base=1;
+    string id =2;
+    google.protobuf.Timestamp effective_date=3;
+    LexiconRecord message_type=4;  // 1=receiptPrinter, 2=customerDisplay
+    string priority=5;
+    google.protobuf.Timestamp from_date=6;
+    google.protobuf.Timestamp to_date=7;
+    repeated MessageLayer messages=8;
+}
+
+message TableDependencyRecord {
+    wpObject base=1;
+    string table_name=2;
+    string column_name=3;
+}
+
+message TranslationTableRecord {
+    map<string, StringList> map=1;
+    string session_key=2;
+}
+
+message OPSTableRowRecord {
+    wpObject base=1;
+    string table_name=2;
+    string key_column_name=3;
+    string key_value=4;
+    string id=5;
+    string parent_id=6;
+    string grand_parent_id=7;
+    string great_grand_parent_id=8;
+    string code=9;
+    string name=10;
+    string filter_column_name=11;
+    string filter_value=12;
+    string order_by=13;
+    string filter_value_via_registry=14;
+    repeated TableDependencyRecord dependencies=15;
+}
+
+message ScreenPerspectiveRecord {
+    wpObject base=1;
+    string screen_name=2;
+    string perspective=3;
+    string center_pane_name=4;
+}
+
+message RowData {
+    repeated string column=1;
+}
+
+message ReturnData {
+    repeated RowData row = 1;
+}
+
+message MembershipRecord {
+    PersonRecord base=1;
+    double point_balance=2;
+    string enroll_number=3;
+    repeated string dependency_list=4;
+}
+
+message PaymentRecord {
+    wpObject base=1;
+    double amount=2;
+    double tendered=3;
+    string id=4;       // paymentID
+    string sales_id=5;  // if blank, use the SalesRecord id. By itself it should not be blank.
+    google.protobuf.Timestamp payment_date=6;
+    TypeRecord payment_method=7;  // type 10 - paidBy
+    string reference=8;
+    CompanyRecord payor=9;
+    double reward_point=10;
+    google.protobuf.Timestamp date_created=11;
+}
+
+message SalesRecord {
+    wpObject base=1;
+    string id=2;
+    string note=3;
+    int64 seq_no=4;
+    double total_amount=5;
+    double rounding=6;
+    double tax_value=7;
+    double discount_at_total=8;
+    double term=9;
+    string ref_no=10;
+    string remark=11;  // reason for deleting, etc;
+
+    MembershipRecord customer=12;
+    PersonRecord promoter=13;
+    PersonRecord deliver_to=14;
+    UserRecord user=15;
+    TerminalRecord terminal=16;
+
+    google.protobuf.Timestamp transaction_date=17;
+    TypeRecord sales_type=18;
+    repeated StockTransactionRecord list=19;
+    repeated PaymentRecord payment_list=20;
+    string where=21;
+    google.protobuf.Timestamp date_created=22;
+    string customer_purchase_id=23;
+    bool to_print_order=24;
+    bool to_submit_e_invoice=25;
+}
+
+message SalesRecordList {
+    wpObject base=1;
+    google.protobuf.Timestamp from_date=2;
+    google.protobuf.Timestamp to_date=3;
+    string limit=4;
+    string offset=5;
+    string sales_type_id=6;
+    repeated SalesRecord list=7;
+    string id=8;
+}
+
+message PurchaseRecord {
+    wpObject base=1;
+    string id=2;
+    string note=3;
+    string ref_no=4;
+    CompanyRecord supplier=5;
+    double term=6;
+    string remark=7;
+    TypeRecord purchase_type=8;
+    google.protobuf.Timestamp transaction_date=9;
+    repeated StockTransactionRecord list=10;
+    repeated PaymentRecord payment_list=11;
+    PersonRecord sales_rep=12;
+    string where=13;
+    google.protobuf.Timestamp date_created=14;
+    string supplier_sales_id=15;
+}
+
+message PurchaseRecordList {
+    wpObject base=1;
+    google.protobuf.Timestamp from_date=2;
+    google.protobuf.Timestamp to_date=3;
+    string limit=4;
+    string offset=5;
+    string purchase_type_id=6;
+    repeated PurchaseRecord list=7;
+    string id=8;
+}
+
+message HistoricalPurchaseRecord {
+    CompanyRecord base=1;
+    google.protobuf.Timestamp transaction_date=2;
+    string ref_no=3;
+    string pack=4;
+    double quantity=5;
+    double bonus_qty=6;
+    double price=7;
+    double amount=8;
+    double discount=9;
+    double qoh_balance=10;
+    string batch_no=11;
+    google.protobuf.Timestamp expiry_date=12;
+    string location=13;
+    string bonus_pack=14;
+    string qty_display=15;
+    string who=16;
+    string transaction_id=17;
+    PersonRecord sales_rep=18;
+    string where=19;
+    google.protobuf.Timestamp date_created=20;
+
+}
+
+message HistoricalSalesRecord {
+    MembershipRecord base=1;
+    google.protobuf.Timestamp transaction_date=2;
+    string ref_no=3;
+    string pack=4;
+    double quantity=5;
+    double price=6;
+    double amount=7;
+    double bonus_qty=8;
+    string bonus_pack=9;
+    string location=10;
+    string who=11;
+    PersonRecord promoter=12;
+    string where=13;
+    double cost_price=14;
+    string transaction_id=15;
+    google.protobuf.Timestamp date_created=16;
+    string batch_no=17;
+    google.protobuf.Timestamp expiry_date=18;
+}
+
+message HistoricalStockRecordList {
+    EntityRecord base=1;
+    repeated HistoricalStockRecord list=3;
+}
+
+message StockRecordList {
+    wpObject base=1;
+    repeated StockRecord list=3;
+}
+
+message InventoryStatusRecord {
+    StockRecord base=1;
+    string month=2;
+    double quantity_in=3;
+    double quantity_out_wholesales=4;
+    double quantity_adj=5;
+    double running_total=6;
+    double quantity_out_retail=7;
+}
+
+message InventoryStatusRecordByOutlet {
+    StockRecord base=1;
+    string where=2;
+}
+
+message MembershipPointRecord {
+    wpObject base=1;
+    int64 row_id=2;
+    google.protobuf.Timestamp transaction_date=3;
+    string receipt_no=4;
+    double amount=5;
+    double points=6;
+    double balance=7;
+    string where=8;
+    string member_id=9;
+
+}
+
+message MembershipPointRecordList {
+    MembershipRecord base=1;
+    repeated MembershipPointRecord list=3;
+}
+
+message AccountingRecord {
+    wpObject base=1;
+    google.protobuf.Timestamp transaction_date=2;
+    string ref_no=3;
+    double debit=4;
+    double credit=5;
+    string remark=6;
+}
+
+message AccountingRecordList {
+    EntityRecord base=1;
+    repeated AccountingRecord list=2;
+}
+
+message AccountJournalRecord {
+    EntityRecord base=1;
+    string invoice=2;
+    google.protobuf.Timestamp date=3;
+    double inv_amount=4;
+    double pay_amount=5;
+    string remark=6;
+}
+
+message AccountTransactionRecord {
+    wpObject base=1;
+    string id=2;
+    int64 seq_no=3;
+    double total_amount=4;
+    string note=5;
+    string ref_no=6;
+    string remark=7;
+    google.protobuf.Timestamp transaction_date=8;
+    EntityRecord entity_from=9;
+    EntityRecord entity_to=10;
+    string type=11;  // out or in
+    repeated AccountJournalRecord list=12;
+}
+
+message AccountTransactionRecordList {
+    wpObject base=1;
+    google.protobuf.Timestamp from_date=2;
+    google.protobuf.Timestamp to_date=3;
+    string limit=4; 
+    string offset=5;
+    repeated AccountTransactionRecord list=6;
+}
+
+message StockTransactionRecordList {
+    EntityRecord base=1;
+    repeated StockTransactionRecord list=2;
+}
+
+message HistoricalPurchaseRecordList {
+    EntityRecord base=1;
+    repeated HistoricalPurchaseRecord list=2;
+}
+
+message HistoricalSalesRecordList {
+    EntityRecord base=1;
+    repeated HistoricalSalesRecord list=2;
+}
+
+message CompanyQuotationRecord {
+    CompanyRecord base=1;
+    double qty=2;
+    double qty_bonus=3;
+    double cost_price=4;
+    string bonus_scheme=6;
+    string qoh_string=7;
+    double reorder_qty=8;
+}
+
+message StockQuotationList { // stock listing of all supplier
+    StockRecord base=1;
+    repeated CompanyQuotationRecord list=2;
+}
+
+
+message StockQuotationRecord {
+    StockRecord base=1;
+    double qty=2;
+    double qty_bonus=3;
+    double cost_price=4;
+    string bonus_scheme=6;
+    double reorder_qty=7;
+}
+
+message CompanyQuotationList { // supplier list all item
+    CompanyRecord base=1;
+    repeated StockQuotationRecord list=2;
+}
+
+message StockBundleRecord {
+    StockRecord base=1;
+    PackingRecord pack=2;
+    double quantity=3;
+    double cost_factor=4;
+}
+
+message StockBundleList {
+    StockRecord base=1;
+    repeated StockBundleRecord list=2;
+}
+
+message SalesPromotionRecordList {
+    EntityRecord base=1;
+    repeated SalesPromotionRecord list=2;
+}
+
+message InventoryStatusRecordList {
+    EntityRecord base=1;
+    repeated InventoryStatusRecord list=2;
+}
+
+message InventoryStatusRecordByOutletList {
+    EntityRecord base=1;
+    repeated InventoryStatusRecordByOutlet list=2;
+}
+
+message DataPoints {
+    string id = 1;
+    string key = 2;
+    repeated double value=3;
+}
+message Series{
+    wpObject base=1;
+    string id=2;
+    repeated string label=3;
+    repeated DataPoints data=4;
+}
+
+message SalesCount {
+    EntityRecord base=1;
+    int32 number_of_repeat=2;
+    double total_quantity=3;
+    double total_amount=4;
+    google.protobuf.Timestamp earliest_date=5;
+    google.protobuf.Timestamp latest_date=6;
+}
+
+message MemberRepeatSales {
+    MembershipRecord base=1;
+    repeated SalesCount stock_list=2;
+}
+
+message StockRepeatSales {
+    StockRecord base=1;
+    repeated SalesCount member_list=2;
+}
+
+message CashOutRecord {
+    wpObject base=1;
+    double amount=2;
+    TypeRecord reason=3;
+    string reference=4;
+    google.protobuf.Timestamp transaction_date=5;
+}
+
+message StockCategoryRecord {
+    wpObject base=1;
+    string id=2;
+    string parent_id=3;
+    string description=4;
+    int32 fav_rating=5;
+}
+
+message StockCategory {
+    oneof data {
+        StockCategoryRecord stock_category =1;
+        StockRecord stock_record=2;
+    }
+    string session_key=3;
+}
+
+message StockCategoryList {
+    StockCategory node=1;
+    repeated StockCategoryList children=2;
+}
+
+message MenuSetting {
+    string name = 1;
+    repeated string home_ids = 2;
+}
+
+message MenuSettingList {
+    wpObject base=1;
+    repeated MenuSetting list=2;
+}
+
+message eInvoiceLogin {
+    string session_key=1;
+    string client_id=2;
+    string client_secret=3;
+    string url=4;
+    bool force_refresh=5; // if true, will always get a new token
+}
+
+message eInvoiceRegister {
+    string session_key=1;
+    string brn=2;
+    string tin=3;
+    string client_id=4;
+    string client_secret=5; 
+    string url=6;
+    string nric=7;
+}
+
+message IDList {
+    string session_key=1;
+    repeated string ids=2;
+    string remark=3;
+}
+
+message IDRecord {
+    string session_key=1;
+    string id=2;
+    string remark=3;
+}
+
+message eInvoicePublicId {
+    string session_key=1;
+    string uuid=2;
+    string long_id=3;
+}
+
+service Chat {
+	rpc StartChat(LoginSessionRecord) returns (stream ServerEventMessage) {}
+}
+
+service Auth {
+	rpc ChangeUserPassword(UserRecord) returns (ReturnStatus) {}
+	rpc CreateSession(LoginSessionRecord) returns (LoginSessionRecord) {}
+	rpc DeleteUserRecord(UserRecord) returns (ReturnStatus) {}
+	rpc DestroySession(Void) returns (ReturnStatus) {}
+	rpc GetUserRecord(UserRecord) returns (UserRecord) {}
+	rpc LoginViaCode (UserRecord) returns (UserRecord) {}
+	rpc Login (UserRecord) returns (UserRecord) {}
+	rpc LoginViaEmail (UserRecord) returns (UserRecord) {}
+	rpc Logout (Void) returns (ReturnStatus) {}
+	rpc SetUserRecord(UserRecord) returns (UserRecord) {}
+	rpc ValidateUser(UserRecord) returns (ReturnStatus) {}
+	rpc ValidateUserEmail(UserRecord) returns (ReturnStatus) {}
+}
+
+service Config {
+	rpc GetServerKey(Void) returns (ServerKeyRecord) {} // in session_id output ServerKeyRecord
+	rpc SetServerKey(ServerKeyRecord) returns (ReturnStatus) {} // input session_id and serialized ServerKeyRecord output status
+	rpc GetServerDate(Void) returns (ReturnDate) {}
+
+    rpc SetFunctionKeyMapping(StringData) returns (ReturnStatus) {}
+    rpc Set_eInvoiceSetting(StringData) returns (ReturnStatus) {}
+    rpc Check_eInvoiceLogin(eInvoiceLogin) returns (ReturnStatus) {}
+    rpc Check_eInvoiceRegister(eInvoiceRegister) returns (ReturnStatus) {}
+    rpc Search_eInvoiceTIN(eInvoiceRegister) returns (ReturnStatus) {}
+
+    
+	rpc SetKey(StringPairParameter) returns (StringPair) {}
+	rpc GetTranslationTable(Void) returns (TranslationTableRecord) {}
+	rpc SetTranslationTable(TranslationTableRecord) returns (ReturnStatus) {}
+
+	rpc SearchTypeList(TypeRecord) returns (TypeRecordList) {}
+	rpc GetTypeRecord(TypeRecord) returns (TypeRecord) {}
+	rpc SetTypeRecord(TypeRecord) returns (TypeRecord) {}
+	rpc DeleteTypeRecord(TypeRecord) returns (ReturnStatus) {}
+
+	rpc DownloadFile(GetFileParameter) returns (stream BinaryData) {}
+	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
+	rpc GetMyAvailableDB(Void) returns (AvailableDBList) {} 
+	rpc GetAvailableServer(Void) returns (AvailableServerList) {} 
+	rpc GetAuthorizeAs(Void) returns (TypeRecordList) {} 
+
+	rpc SaveScreen(ScreenPerspectiveRecord) returns (Void) {}
+	rpc GetScreen(ScreenPerspectiveRecord) returns (ScreenPerspectiveRecord) {}
+
+	rpc GetEntityRecord(EntityRecord) returns (EntityRecord) {}
+	rpc SetEntityRecord(EntityRecord) returns (EntityRecord) {}
+	rpc DeleteEntityRecord(EntityRecord) returns (Void) {}
+	rpc UndeleteEntityRecord(EntityRecord) returns (Void) {}
+	rpc RunServerSideCommand(MenuActionParam) returns (stream BinaryData) {}
+	rpc RunServerSideCommandDownloadLink(MenuActionParam) returns (ReturnStatus) {}
+
+	rpc GetTerminal(TerminalRecord) returns (TerminalRecord) {}
+	rpc SetTerminal(TerminalRecord) returns (TerminalRecord) {}
+	rpc DeleteTerminal(TerminalRecord) returns (Void) {}
+
+}
+
+service SQL {
+	rpc GetRowByKey(OPSTableRowRecord) returns (StringPairList) {}
+	rpc SetBrowserNodeValue(OPSTableRowRecord) returns (ReturnStatus) {}
+	rpc DeleteBrowserNode(OPSTableRowRecord) returns (ReturnStatus) {}
+
+	rpc ExecuteSQL(SQLCommand) returns (SQLResult) {}
+	rpc GetTable(SQLCommandRecord) returns (stream StringRow) {}
+	rpc GetLexiconRecord(LexiconRecord) returns (LexiconRecord) {}
+	rpc SetLexiconRecord(LexiconRecord) returns (LexiconRecord) {}
+	rpc Search(Parameter) returns (ReturnData) {}
+
+	rpc GetDisclaimerNote(RequestInfoRecord) returns (StringList) {}
+	rpc GetHistory(HistoricalStockRecordList) returns (HistoricalStockRecordList) {}
+}
+
+service Sales {
+	rpc SetWorkShiftRecord(WorkShiftRecord) returns (ReturnStatus){}
+	rpc GetWorkShiftRecord(WorkShiftRecord) returns (WorkShiftRecord){}
+
+	rpc SaveSales(SalesRecord) returns (SalesRecord) {}
+	rpc DeleteSales(SalesRecord) returns (SalesRecord) {}
+	rpc DeleteAllSales(SalesRecord) returns (SalesRecord) {}
+    rpc GetSalesList(SalesRecordList) returns (SalesRecordList) {}
+	rpc GetSalesDetail(SalesRecord) returns (SalesRecord) {}
+	rpc GetInvoice(SearchParam) returns (stream BinaryData) {}
+	rpc GetPurchaseOrderInPDF(SearchParam) returns(stream BinaryData) {}
+
+	rpc GetSalesIDByWorkShift(StringData) returns (StringData) {}
+	rpc GetWorkShiftReport(RequestInfoRecord) returns (stream BinaryData){}
+
+	rpc ReceivePayment(SalesRecord)  returns (SalesRecord){}
+	rpc UpdateReceiptPayBy(SalesRecord)  returns (Void){}
+
+    // get quotation based on Customer
+	rpc GetCustomerQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {}
+	rpc SetCustomerQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {}
+	rpc DeleteCustomerQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {}
+	rpc UpdateCustomerQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {} 
+
+    // get quotation based on Stock
+	rpc GetStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {}
+	rpc SetStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {}
+	rpc DeleteStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {}
+	rpc UpdateStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {} 
+
+    rpc GetLatestSalesRecord(HistoricalStockRecordList) returns (HistoricalStockRecordList) {}
+	rpc GetSalesSummary(RequestInfoRecord)  returns (stream BinaryData){}
+	rpc GetSalesSummaryDownloadLink(RequestInfoRecord)  returns (ReturnStatus){}
+
+    rpc Submit_eInvoice(IDList) returns (ReturnStatus){}
+    rpc Cancel_eInvoice(IDList) returns (ReturnStatus){}
+    rpc Check_eInvoiceSubmission(IDList) returns (ReturnStatus){}
+    rpc ShowError_eInvoice(IDRecord) returns (ReturnStatus){}
+    rpc Get_eInvoicePublicId(IDRecord) returns (ReturnStatus) {}
+
+}
+
+service Purchases {
+	rpc SavePurchases(PurchaseRecord)  returns (PurchaseRecord){}
+	rpc DeletePurchases(PurchaseRecord)  returns (PurchaseRecord){}
+	rpc DeleteAllPurchases(PurchaseRecord)  returns (PurchaseRecord){}
+	rpc MakePayment(PurchaseRecord)  returns (PurchaseRecord){}
+	rpc GetPurchaseList(PurchaseRecordList)  returns (PurchaseRecordList){}
+	rpc GetPurchaseDetail(PurchaseRecord)  returns (PurchaseRecord){}
+	rpc GetPurchaseInvoices(PurchaseRecordList) returns (PurchaseRecordList) {}
+
+    // get quotation based on Supplier
+	rpc GetSupplierQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {}
+	rpc SetSupplierQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {}
+	rpc DeleteSupplierQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {}
+	rpc UpdateSupplierQuotationRecord(CompanyQuotationList) returns (CompanyQuotationList) {} 
+
+    // get quotation based on Stock
+	rpc GetStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {}
+	rpc SetStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {}
+	rpc DeleteStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {}
+	rpc UpdateStockQuotationRecord(StockQuotationList) returns (StockQuotationList) {} 
+
+    rpc GetLatestPurchaseRecord(HistoricalStockRecordList) returns (HistoricalStockRecordList) {}
+	rpc GetPurchaseSummary(RequestInfoRecord)  returns (stream BinaryData){}
+
+    rpc Get_eInvoicePurchaseRecord(eInvoicePublicId) returns (PurchaseRecord) {}
+
+}
+
+service Stock {
+    rpc GetMenuSettingList(MenuSettingList) returns (MenuSettingList) {}
+    rpc SaveMenuSettingList(MenuSettingList) returns (MenuSettingList) {}
+	rpc GetCategoryList(StringData) returns (StockCategoryList) {}
+    rpc SaveCategory(StockCategory) returns (StockCategory) {}
+	rpc GetCategory(StringData) returns (StockCategory) {}
+    rpc DeleteCategory(StockCategory) returns (ReturnStatus) {}
+
+    rpc GetStockID(StockRecord) returns (StockRecord) {}
+	rpc GetStockRecord(StockRecord) returns (StockRecord) {}
+	rpc SetStockRecord(StockRecord) returns (StockRecord) {}
+	rpc SetBulkStockRecord(StockRecordList) returns (StockRecordList) {}
+	rpc DeleteStockRecord(StockRecord) returns (ReturnStatus) {}
+	rpc HideStockRecord(StockRecord) returns (ReturnStatus) {}
+	rpc DeleteStockReorderList(StockRecord) returns (Void) {}
+	rpc GetNextCode(StockRecord) returns (StockRecord) {}
+	rpc GetStockByType(TypeRecord) returns (StockRecordList) {}
+
+    rpc DeleteStockTransactionRecord(StockTransactionReference) returns(Void){}
+    rpc ResetCostUsingCurrentCost(StockTransactionReference) returns(Void){}
+    
+    rpc SetCustomerRequest(EntityRecord) returns (ReturnStatus) {}
+    rpc DeleteCustomerRequest(EntityRecord) returns (ReturnStatus) {}
+
+	rpc GetAllPackRecords(StockRecord) returns (StockRecord) {}
+	rpc AdjustStockQOH(StockTransactionRecord) returns (Void) {}
+	rpc AddStockToReorderList(StockRecord) returns (Void) {}
+	rpc ComputeExpiry(StockRecord) returns (Void) {}
+	rpc GetStockByReceiveID(StockTransactionRecord) returns (StockTransactionRecord) {}
+    rpc GetStockReceiveBatch(StockReceiveBatchList) returns (StockReceiveBatchList) {}
+	rpc GetStockPackingByBarCode(StockTransactionRecord) returns (StockTransactionRecord) {}
+    rpc ClearStockReceiveBatch(StockReceiveBatch) returns (Void) {}
+	rpc GetStockByScannedCode(StringData) returns (StockTransactionRecord) {}
+	rpc GetStockPurchaseHistory(HistoricalPurchaseRecordList) returns (HistoricalPurchaseRecordList) {}
+	rpc GetStockSalesHistory(HistoricalSalesRecordList) returns (HistoricalSalesRecordList) {}
+	rpc GetStockTransactionHistory(HistoricalStockRecordList) returns (HistoricalStockRecordList) {}
+	rpc GetStockList(StockTransactionRecordList) returns (StockTransactionRecordList) {}
+	rpc GetStockPromotionRecord(SalesPromotionRecordList) returns (SalesPromotionRecordList) {}
+	rpc SetStockPromotionRecord(SalesPromotionRecordList) returns (SalesPromotionRecordList) {}
+	rpc SetComponentRecord(StockTransactionRecordList) returns (StockTransactionRecordList) {}
+    rpc InitializeStockPriceCategory(PackingRecord) returns (PackingRecord) {}
+
+	rpc GetStockBundleList(StockBundleList) returns (StockBundleList) {}
+	rpc SetStockBundleList(StockBundleList) returns (StockBundleList) {}
+	rpc DeleteStockBundleList(StockBundleList) returns (StockBundleList) {}
+	rpc UpdateStockBundleList(StockBundleList) returns (StockBundleList) {} 
+
+    rpc GetStockSupplierRecord(HistoricalPurchaseRecordList) returns (HistoricalPurchaseRecordList) {}
+	rpc IsTransactionExistForPackType(StockRecord) returns (ReturnStatus) {}
+	rpc IsBarcodeExists(SearchItem) returns (ReturnStatus) {}
+	rpc GetStockInventoryStatusRecord(InventoryStatusRecordList) returns (InventoryStatusRecordList) {}
+	rpc GetStockInventoryStatusRecordByOutlet(InventoryStatusRecordByOutletList) returns (InventoryStatusRecordByOutletList) {}
+    rpc GetAnnualSalesSummary(Series) returns (Series) {}
+    rpc GetAnnualPurchaseSummary(Series) returns (Series) {}
+
+    rpc GetStockRepeatSales(StockRepeatSales) returns (StockRepeatSales) {}
+
+}
+
+service Membership {
+	rpc GetNextCode(MembershipRecord) returns (MembershipRecord) {}
+	rpc DeleteMembershipRecord(MembershipRecord) returns (Void) {}
+	rpc GetMembershipRecord(MembershipRecord) returns (MembershipRecord) {}
+	rpc SetMembershipRecord(MembershipRecord) returns (MembershipRecord) {}
+	rpc GetMembershipPoint(MembershipPointRecordList) returns (MembershipPointRecordList) {}
+	rpc DeleteRewardPoint(MembershipPointRecord) returns (MembershipPointRecord) {}
+	rpc UpdateRewardPoint(MembershipPointRecord) returns (MembershipPointRecord) {}
+	rpc GetMembershipPointBalance(MembershipRecord) returns (MembershipRecord) {}
+	rpc GetMemberHistory(HistoricalStockRecordList) returns (HistoricalStockRecordList) {}
+
+	rpc DeletePersonRecord(PersonRecord) returns (Void) {}
+	rpc GetPersonRecord(PersonRecord) returns (PersonRecord) {}
+	rpc SetPersonRecord(PersonRecord) returns (PersonRecord) {}
+
+    rpc GetMemberRepeatSales(MemberRepeatSales) returns (MemberRepeatSales) {}
+}
+
+service Company {
+	rpc GetNextCode(CompanyRecord) returns (CompanyRecord) {}
+	rpc DeleteCompanyRecord(PersonRecord) returns (Void) {}
+	rpc GetCompanyRecord(PersonRecord) returns (PersonRecord) {}
+	rpc SetCompanyRecord(PersonRecord) returns (PersonRecord) {}
+}
+
+service Report {
+	rpc GetBillingReport(MenuActionParam) returns (stream BinaryData) {}
+	rpc GetAccountStatementReport(MenuActionParam) returns (stream BinaryData) {}
+}
+
+service Customer {
+
+}
+
+service Supplier {
+
+}
+service Accounting {
+	rpc GetAccountTransactionRecordList(AccountTransactionRecordList) returns (AccountTransactionRecordList) {}
+	rpc GetAccountingRecord(AccountingRecordList) returns (AccountingRecordList) {}
+	rpc GetAccountingDetailRecord(AccountingRecordList) returns (AccountingRecordList) {}
+	rpc GetJournalRecordInPDF(SearchParam) returns(stream BinaryData) {}
+
+	rpc SaveAccountingRecords(AccountTransactionRecord) returns (AccountTransactionRecord) {}
+	rpc DeleteAccountingRecords(AccountTransactionRecord) returns (AccountTransactionRecord) {}
+
+	rpc SaveCashOut(CashOutRecord) returns (ReturnStatus) {}
+
+}
+
+
+message ServerKeyRecord {
+    wpObject base=1;
+    repeated StringPair point_value_weight_list = 2;
+    MessageRecord customer_display = 3;
+    MessageRecord printer = 4;
+    bool admin_can_modify_qoh = 5;
+    bool allow_duplicate_code = 6;
+    bool auto_code_check_prefix = 7;
+    bool auto_generate_item_code = 8;
+    bool auto_generate_membership_code = 9;
+    bool auto_generate_supplier_code = 10;
+    bool enable_check_poison_sales = 11;
+    bool enable_check_pseudo_poison_sales = 12;
+    bool enable_credit_limit_check = 13;
+    bool enable_fractional_pack_size = 14;
+    bool enable_fractional_quantity = 15;
+    bool has_gst = 16;
+    bool invoice_format_portrait = 17;
+    bool invoice_show_customer_all_pages = 18;  // show customer name in all invoice pages;
+    int32 invoice_bottom_box_size = 19;
+    int32 no_of_decimal_point_for_price = 20;
+    bool is_auto_compute_default_prices = 21;
+    bool is_auto_compute_other_pack_prices = 22;
+    bool is_price_include_tax = 23;
+    bool is_two_line_desc_on_receipt = 24;
+    bool movement_include_hold = 25;
+    bool print_receipt_by_default = 26;
+    bool qoh_include_hold_in = 27;
+    bool qoh_include_hold_out = 28;
+    bool qr_before_good_bye = 29;
+    bool retain_user_id_on_relogin = 30;  
+    bool round_to_nearest5cents = 31;
+    bool enable_different_date_transaction = 32;
+    bool round_to_nearest5cents_wholesales = 33;
+    bool run_local_search = 34;
+    int32 theme_color_red = 35;
+    int32 theme_color_green = 36;
+    int32 theme_color_blue = 37;
+    bool run_script_in_db_location = 38;  // run all script root folder in the same as current DB folder
+    bool save_stock_pack_prices  = 39;   // to save price by category in StockPackPrices - meaning that this will detach the price for edited item from stockpricecategory factorAboveCost
+    bool show_category_in_sales_summary_pdf = 40;
+    bool show_category_in_sales_summary_receipt_printer = 41;
+    bool show_discount_on_wholesales_invoice = 42;
+    bool show_srp_on_wholesales_invoice = 43;
+    bool show_account_id_on_invoice = 44;
+    bool show_discount_per_item_on_receipt = 45;
+    bool show_list_all_cases = 46;
+    bool show_gst_summary = 47;
+    bool show_mal_on_invoice = 48;
+    bool show_batch_expiry_on_invoice = 49;
+    bool show_reward_points = 50;
+    bool show_total_discount_on_receipt = 51;
+    bool truncate_sum = 52;
+    bool use_rm_only_for_points = 54;  // no cents
+    bool whs_use_cost = 55;      // use cost price in wholesales
+    bool pso_use_only_poison = 56;
+    int64 this_outlet_entity_id = 57;
+    int64 this_outlet_entity_id_sales = 58;
+    bool share_membership = 59;
+    double rm_to_one_point = 60;
+    double points_to_one_rm = 144;   
+    double qr_image_factor = 61;  // 1=full page, 0.5, half
+    double membership_qr_image_factor = 62;
+    int32 age_active_in_months = 63;
+    bool allow_edit_invoice_record = 64;
+    int32 auto_item_code_length = 65;
+    int32 auto_membership_code_length = 66;
+    int32 auto_supplier_code_length = 67;
+    bool default_sales_smallest_pack = 68;  // 1==yes;
+    bool enable_accounting = 69;
+    bool enable_backup = 70;
+    bool enable_catering = 71;
+    bool enable_dispensing_label = 72;
+    bool enable_hr = 73;
+    bool enable_mykad = 74;
+    bool enable_online_store = 75;
+    bool enable_patient_record = 76;
+    bool enable_print_label = 77;
+    bool enable_rental = 78;
+    bool enable_ticketing = 79;
+    int32 idle_time_to_lock_screen = 80;
+    int32 idle_time_to_start_demo = 81;
+    int32 no_of_lines_eject = 82;
+    int32 percent_margin_above_cost = 83;
+    int32 receipt_printer_point_size = 84;
+    int32 receipt_printer_spacing = 85;
+    int32 sum_to_nearest = 86;
+    google.protobuf.Timestamp software_expiry_date = 87;
+    google.protobuf.Timestamp software_register_date = 88;
+    int32 weekflag = 89;
+    string ibt_type_id = 90;
+    string membership_reward_store_code = 91;
+    string acc_bank_type_group_id = 92;
+    string acc_cash_type_group_id = 93;
+    string acc_journal_type_expenses = 94;
+    string acc_journal_type_others = 95;
+    string acc_journal_type_purchases = 96;
+    string acc_journal_type_sales = 97;
+    string adjust_stock_type_id = 98;
+    string application_name = 99;
+    string application_type = 100;
+    string cara_bayar_group_id = 101;
+    string cash_sales_type_id = 102;
+    string category_list_cross_tab = 103; 
+    string credit_sales_type_id = 104;
+    string default_column_for_zero_cost_insales = 105;  // latestCost, weightedAvgCost, maxCost
+    string default_service_charge_percentage = 106;
+    string entity_type_customer = 107;
+    string entity_type_group_id = 108;
+    string entity_type_member = 109;
+    string entity_type_promoter = 110;
+    string entity_type_supplier = 111;
+    string first_day_ofweek = 112;
+    string gst_marker = 113;  // S
+    string gst_reg_no = 114;
+    string gst_zero_marker    = 115;    // Z
+    string invoice_disclaimer = 116;  // print on invoice
+    string os_version = 117;
+    string outlet_address = 118;
+    string outlet_code = 119;
+    string outlet_name = 120;
+    string outlet_reg_no = 121;
+    string pay_by_amex = 122;
+    string pay_by_cash = 123;
+    string pay_by_cheque = 124;
+    string pay_by_credit = 125;
+    string pay_by_master_card = 126;
+    string pay_by_reward_point = 127;
+    string pay_by_visa = 128;
+    string pay_by_voucher = 129;
+    string poison_category_must_control = 130;
+    string poison_category_type_group_id = 131;
+    string price_category_group_id = 132;
+    string qr_string = 133;
+    string quotation_disclaimer = 134;      // print on quotation
+    string reference_cost_for_selling_price = 135;  // max, latest, average
+    string stock_transaction_type_group_id = 136;
+    string stock_type_group_id = 137;
+    string tax_gst_type_id = 138;
+    string tax_percentage = 139;
+    string version_string = 140;
+    string delivery_note_disclaimer = 141;
+    string proforma_invoice_disclaimer = 142;
+    string poison_order_disclaimer = 143;
+    string session_key=145; // points_to_one_rm uses 144;
+
+    // add 10July2022
+    string currency_symbol=146;
+    bool all_use_same_selling_price=147;
+
+    bool show_bonus_on_invoice = 148;
+    bool is_husm_format=149;
+
+    // add 5 Dec 2022
+    bool hide_calendar=150;
+    bool invoice_box_fill=151;
+    int32 box_color_red = 152;
+    int32 box_color_green = 153;
+    int32 box_color_blue = 154;
+    string letter_head_image = 155;
+    bool letterhead_box_fill=156;
+    string group_filter=157;
+    string receipt_logo=158;
+    bool print_barcode_using_bitmap=159;
+    bool use_qr_for_labels=160;
+    bool print_barcode_first=161;
+    string item_list_cross_tab=162;
+    bool show_itemcode_in_invoice=163;
+    // 25 jan 2023
+    string default_cost_price_inpurchase = 164;
+    bool auto_transfer_in_as_purchase=165;
+    bool simplified_stock = 166;
+
+    // 2 Jun 2023
+    string cashout_reason_group_id = 167;
+    string function_key_mapping = 168;
+    string pay_by_other = 169;
+    bool enable_market_place = 170;
+
+    bool sales_summary_with_border=171;
+    string authorize_as_group_id = 172;
+
+    double logo_image_factor = 173;  // 1=full page, 0.5, half
+    bool enable_set_stock_active_date_all_outlet = 174;
+    bool reload_transaction_items_by_name = 175;
+
+    // 2 Jul 2024 - added option to show/hide membership point summary
+    bool show_membership_point_in_sales_summary_pdf = 176;
+    bool show_membership_point_in_sales_summary_receipt_printer = 177;
+
+    // 18 Jul 2024
+    bool persistent_promoter_selection=178;
+    bool persistent_promoter_selection_wholesales=179;
+    bool persistent_sales_rep_selection=190;
+
+    bool show_minimal_in_receive_stock=191;
+    bool enable_member_price=192;
+
+    // 28 Apr 2025
+    bool show_receipt_barcode=193;
+    bool alert_smaller_cost_input=194;
+    bool alert_larger_cost_input=195;
+
+    bool enable_e_invoice=196;
+    string e_invoice_setting=197;  // e-invoice setting
+}

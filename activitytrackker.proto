@@ -1,0 +1,151 @@
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+package ActivityTrackkerProto;
+
+message BoolValue {
+    bool value=1;
+}
+
+enum UserType{
+    GroupLeader = 0; // parent
+    Participant  = 1; // student
+    ServiceProvider = 2; // shops, bus drivers
+    Moderator = 3; // teachers
+}
+
+enum EventType{
+    Attendance= 0; // parent
+    QualityCheck= 1; // student
+    Sales= 2; // shops, bus drivers
+}
+
+
+message User {
+    enum UserRole {
+        Admin = 0;
+        CreateDB = 1;
+        AuthorizeEmail = 2;
+    }
+    string id=1;
+    string email=2;
+    string name=3;
+    string ic=4;
+    string address=5;
+    string tel_no=6;
+    string description=7;
+    google.protobuf.Timestamp time_registered=8;
+    google.protobuf.Timestamp time_accepted=9;
+    repeated UserRole user_roles=10;
+    repeated UserType user_types=11;
+}
+
+message IdToken {
+    string email=1;
+    string token=2;
+}
+
+message Session {
+    string email=1;
+    string db_name=2;
+    string app_name=3;
+    string device_token=4;
+    string message=5;
+}
+
+enum PrivacyType{
+    Private = 0;
+    Restricted  = 1;
+    Public = 2;
+}
+
+message ApproveEmail {
+    string email_to_approve=2;
+}
+
+message DBName {
+    string db_name=1;
+    string app_name=2;
+    string folder_name=3;
+    PrivacyType privacy_type=4;
+    string owner_email=5;
+}
+
+message DBList {
+    repeated DBName list = 2;
+}
+
+message EventRecord {
+    google.protobuf.Timestamp date=1;
+}
+
+message ShareDBWith {
+    DBName db=1;
+    repeated string emails=2;
+}
+
+message Config {
+    string version=1;
+    DBName db=2;
+    User user=3;
+    repeated DBName db_list=4;
+    repeated User require_approval=5;
+}
+
+service AT_AuthenticationService {
+    rpc RegisterSession(User) returns (User) {}
+    rpc UnRegisterSession(User) returns (BoolValue) {}
+    rpc UnRegisterAllSession(User) returns (BoolValue) {}
+    rpc ValidateToken(IdToken) returns (BoolValue) {}
+    rpc GetConfig(Config) returns (Config) {}
+    rpc ApproveUser(ApproveEmail) returns (BoolValue) {}
+    
+    rpc ShareDB(ShareDBWith) returns (BoolValue) {}
+    rpc GetDBList(DBList) returns (DBList) {}
+
+    rpc SetApplicationName(DBName) returns (BoolValue) {}
+
+    rpc CreateDatabase(DBName) returns (DBList) {}
+    rpc DeleteDatabase(DBName) returns (DBList) {}
+
+    rpc SaveDependent(Dependent) returns (Dependent) {}
+    rpc GetDependentList(SearchKey) returns (ParticipantList) {}
+
+    rpc SaveParticipant(Dependent) returns (Dependent) {}
+    rpc GetParticipantList(SearchKey) returns (ParticipantList) {}
+
+}
+
+
+message Item {
+    int64 id=1;
+    string code=2;
+    string name=3;
+    string description=4;
+}
+
+message ItemList {
+    repeated Item list=2;
+}
+
+message ParticipantList {
+    repeated User list=2;
+}
+
+message SearchKey {
+    string code=1;
+    string name=2;
+    string description=3;
+    string all=4;
+}
+
+message Dependent {
+    string primary_email=1;
+    User user=2;
+}
+
+service AT_TrackkingService {
+    rpc SaveItem(Item) returns (ItemList) {}
+    rpc GetItemList(SearchKey) returns (ItemList) {}
+}

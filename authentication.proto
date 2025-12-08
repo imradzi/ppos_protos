@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package AuthenticationProto;
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/empty.proto";
+import public "user.proto";
+
+message LoginRecord {
+    string email=1;
+    string password=2;
+}
+
+message LoginToken {
+    string email=1;
+    string token=2;
+    bool is_valid=3;
+}
+
+message ValidateAuthRecord {
+  string user_uuid=1;
+  string site_id=2;
+  string session_uuid=3;
+}
+
+message ForgetEmailRecord {
+    string email=1;
+}
+
+message ResetPasswordRecord{
+    string email=1;
+    string password=2;
+    string validation_key=3;
+
+}
+
+message ValidationRecord {
+    string email=1;
+    string validation_key=2;
+}
+
+message LoginResponse {
+    string session_uuid = 1;
+    string error_message=2;
+    string user_uuid= 3;
+}
+
+message LogoutRequest {
+    string session_uuid=1;
+    string email = 2;
+}
+
+message SessionRecord {
+  string session_id=1;
+  string host_name=2;
+  int32 port_number=3;
+  string master_name=4;
+  string trans_name=5;
+}
+
+message ChatMessage {
+    google.protobuf.Timestamp timestamp = 1;
+    string destination_id=2;
+    string from_id=3;
+    string thread_id=4;
+    string subject=5;
+    string topic=6;
+    string body=7;
+}
+
+service AuthenticationService {
+  rpc CreateSession(SessionRecord) returns (SessionRecord) {}
+  rpc StartChat(stream ChatMessage) returns (stream ChatMessage) {}
+  rpc GetDate(google.protobuf.Empty) returns (UserProto.Date) {} 
+  rpc ValidateLoginToken(LoginToken) returns (LoginToken) {}
+
+  rpc Register(UserProto.User) returns (LoginResponse) {}
+  rpc GetUser(UserProto.User) returns (UserProto.User) {}
+  rpc SaveUser(UserProto.User) returns (UserProto.User) {}
+  rpc DeleteUser(UserProto.User) returns (google.protobuf.BoolValue) {}
+  rpc Login(LoginRecord) returns (LoginResponse) {}
+  rpc Logout(LogoutRequest) returns (google.protobuf.Empty) {}
+  rpc Validate(ValidationRecord) returns (LoginResponse) {}
+  rpc ValidateAuth(ValidateAuthRecord) returns (google.protobuf.BoolValue) {}
+  rpc ForgetPassword(ForgetEmailRecord) returns (LoginResponse) {}
+  rpc ResetPassword(ResetPasswordRecord) returns (LoginResponse) {}
+}
+

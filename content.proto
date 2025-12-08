@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package ContentProto;
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/wrappers.proto";
+import public "user.proto";
+
+message Content {
+    string uuid=1; // blank if new one to be created;
+    string description=2;
+    string hashkeys=3;
+    string title=4;
+    string subtitle=5;
+    google.protobuf.Timestamp time_created=6;
+    google.protobuf.Timestamp time_modified=7;
+    string footer=8;
+    string mediatype=9;
+    bool allow_comment=10;
+    bool allow_like=11;
+    bool allow_rating=12;
+    bool allow_purchase=13;
+    repeated Content list=14; // uuids of linkpages
+    string session_uuid=15;
+}
+
+message Media {
+    string uuid=1;
+    bytes media=2;
+    string mediatype=3;
+    string original_document_name=4;
+}
+
+message IdRecord {
+    string uuid=1;
+}
+
+message ContentList {
+    repeated Content list=1;
+}
+
+message ContentQuery {
+    string session_uuid=1;
+    string user_uuid=2;
+    string fts_search_text=3;
+    int64 offset=4;
+    int32 limit=5; 
+    repeated string categories=6; 
+}
+
+message ContentIdList {
+    string uuid=1;
+    repeated ContentIdList list=2;
+}
+
+message IdRecordList {
+    repeated string list=1; // uuids;
+}
+
+message Site {
+    string uuid = 1;
+    string name = 2;
+    string description = 3;
+    string db_master = 4;
+    string db_trans = 5;
+    string roles = 6;
+    Content profile= 7; // profiles uuid
+}
+
+message SiteList {
+    repeated Site sites=1;
+}
+
+message UserSite {
+    string user_uuid=1;
+    string site_uuid=2;
+    string roles=3;
+}
+
+message Follows {
+    string uuid=1;
+    string roles=2;
+}
+
+message Followings {
+    string uuid=1;
+    repeated Follows following=2;
+}
+
+service ContentService {
+    rpc GetDate(google.protobuf.Empty) returns (UserProto.Date) {} 
+    rpc Login(UserProto.User) returns(UserProto.User) {}
+    rpc Logout(UserProto.User) returns(google.protobuf.Empty) {}
+
+    rpc DeleteSite(Site) returns (google.protobuf.Empty) {}
+    rpc GetSite(IdRecord) returns (Site) {}
+    rpc WriteSite(Site) returns (Site) {} // create or update
+    rpc GetSiteList(UserProto.User) returns (SiteList) {}
+    rpc WriteSiteList(SiteList) returns (SiteList) {}
+
+
+    rpc GetContentList(ContentQuery) returns (ContentList) {}
+    rpc GetContentIdList(ContentQuery) returns (ContentIdList) {}
+    rpc GetContent(IdRecord) returns (Content) {}
+    rpc AddPage(IdRecord) returns (Content) {} // add content to existing page
+    rpc DeletePage(IdRecord) returns (Content) {} 
+    rpc WriteContent(Content) returns (IdRecord) {} 
+    rpc WriteMedia(Media) returns (google.protobuf.Empty) {}
+	rpc UploadFile(stream Media) returns (google.protobuf.Empty) {}
+
+    rpc Follow(UserSite) returns (google.protobuf.BoolValue) {}
+    rpc UnFollow(UserSite) returns (google.protobuf.BoolValue) {}
+    rpc GetFollowing(UserProto.User) returns (Followings) {}
+    rpc GetFollower(Site) returns (Followings) {}
+}
+

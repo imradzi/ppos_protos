@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+import "ppos.proto";
+package PrinterProto;
+
+enum PaperSize {
+  mm58 = 0;
+  mm80 = 1;
+  mm72 = 3;
+};
+
+message BluetoothInfo {
+  string name =1;
+  string mac_address=2;
+}
+
+message PrinterType {
+  string printer_name = 1;
+  BluetoothInfo printer_info = 2;
+  PaperSize paper_size = 3;
+  bool is_inner_printer = 4;
+  PPOS.StockCategoryRecord stock_category = 5;
+}
+
+message PrinterTypeList {
+  repeated PrinterType list=1;
+}
+

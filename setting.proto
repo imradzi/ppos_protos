@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package SettingProto;
+import "google/protobuf/empty.proto";
+import public "user.proto";
+
+
+message DeviceId {
+    string id = 1;
+}
+
+message Setting {
+    string device_id = 1;
+    string user_uuid=2;
+    string selected_site_uuid=3;
+    string application_name=4;
+}
+
+service SettingService {
+  rpc GetDate(google.protobuf.Empty) returns (UserProto.Date) {} 
+  rpc GetSetting(DeviceId) returns (Setting) {}
+  rpc WriteSetting(Setting) returns (google.protobuf.Empty) {}
+}
+

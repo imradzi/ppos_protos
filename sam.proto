@@ -1,0 +1,107 @@
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "auth_database.proto";
+package SAMProto;
+
+
+message Type {
+    string id=1;
+    string name=2;
+}
+
+message Node {
+    string id=1;
+    string code=2;
+    string name=3;
+    string parent_id=4;
+    bool allow_insert=5;
+    repeated Node children=7;
+    EntityList entity_list=8;
+    string entity_id=9;
+    string grand_parent_id=10;
+}
+
+message Entity {
+    string id=1;
+    string code=2;
+    string name=3;
+    string description=4;
+    repeated AuthDatabaseProto.StringValue types=5;
+    string fts_id=6;
+    string address=7;
+    string phone_no=8;
+}
+
+message EntityList {
+    string email=1;
+    string db_name=2;
+    string type_id=3;
+    repeated Entity list=4;
+}
+
+message SearchParam {
+    string email=1;
+    string db_name=2;
+    string type_id=3;
+    string search_key=4;
+    int32 year=5;
+}
+
+message TransactionSimple {
+    string id=1;
+    Type type=2;
+    google.protobuf.Timestamp date=3;
+    Entity from_entity=4;
+    Entity to_entity=5;
+    double amount=6;
+    string description=7;
+    string references=8;
+    google.protobuf.Timestamp dateCreated=9;
+}
+
+message TransactionList {
+    string year=1;
+    repeated TransactionSimple list=2;
+}
+
+message TransactionSummary {
+    string year=1;
+    Entity fromEntity=2;
+    Entity toEntity=3;
+    double amount=4;
+}
+
+message IncomeStatement {
+    string year=1;
+    repeated TransactionSummary income=2;
+    repeated TransactionSummary expense=3;
+}
+
+service SAMService {
+    rpc CreateDatabase(AuthDatabaseProto.DBName) returns (AuthDatabaseProto.DBList) {}
+    rpc DeleteDatabase(AuthDatabaseProto.DBName) returns (AuthDatabaseProto.DBList) {}
+
+    rpc SaveNode(Node) returns (Node) {}
+    rpc AddNode(Node) returns (Node) {}
+    rpc DeleteNode(Node) returns (Node) {}
+
+    rpc GetAccountTree(google.protobuf.Empty) returns (Node) {}
+
+    rpc GetEntityList(EntityList) returns (EntityList) {}
+    rpc GetEntityListInGroup(EntityList) returns (EntityList) {}
+    rpc SetEntity(Entity) returns (AuthDatabaseProto.BoolValue) {}
+    rpc DeleteEntity(Entity) returns (AuthDatabaseProto.BoolValue) {}
+    rpc SearchEntity(SearchParam) returns (EntityList) {}
+
+    rpc GetExpenseList(TransactionList) returns (TransactionList) {}
+    rpc GetIncomeList(TransactionList) returns (TransactionList) {}
+    rpc SaveExpense(TransactionSimple) returns(TransactionSimple) {}
+    rpc SaveIncome(TransactionSimple) returns(TransactionSimple) {}
+
+    rpc GetBalanceSheet(google.protobuf.Empty) returns (IncomeStatement) {} // A = L + OE
+    rpc GetIncomeStatement(google.protobuf.Empty) returns (IncomeStatement) {} // Net Income = Revenue + Gain - (Expenses + Losses)
+    rpc GetCashFlowStatement(google.protobuf.Empty) returns (IncomeStatement) {}
+}

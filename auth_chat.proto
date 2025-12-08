@@ -1,0 +1,51 @@
+
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "auth_database.proto";
+
+package AuthChatProto;
+
+enum EventType {
+    ev_unassigned = 0;
+    ev_error=1;
+    ev_server=2;
+    ev_entity=3;
+    ev_entity_relationship=4;
+    ev_membership=5;
+    ev_bill=6;
+    ev_invoice=7;
+    ev_accounting=8;
+    ev_chat=9;
+    ev_info=10;
+    ev_news=11;
+    ev_paymentreceived=12;
+    ev_paymentmade=13;
+    ev_user=14;
+    ev_death=15;
+    ev_close_chat=16;
+    ev_num_event=99;
+};
+
+message KeepAliveMessage {
+    int32 duration=2; // seconds
+}
+
+
+message ServerEventMessage {
+    message MessageRecord {
+	    string key=1;
+	    string value=2;
+        string description=3;
+        string pay_load=4; // proto serialized in hex string format. 
+    }
+
+    EventType type=1;
+    repeated MessageRecord messages=2;
+}
+
+service Chat {
+	rpc StartChat(AuthDatabaseProto.Config) returns (stream ServerEventMessage) {}
+	rpc StopChat(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+    rpc KeepAlive(KeepAliveMessage) returns (google.protobuf.Empty) {} // will not auto disconnect for next 10 mins 
+}

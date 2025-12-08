@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package DisplayProto;
+
+message Void {
+    string session_key=1;
+    string group_filter=2;
+}
+
+message DisplayRecord {
+    int32 panel = 1;
+    string description = 2;
+    int32 row_no = 3;
+}
+
+message LineRecord {
+    int32 panel = 1;
+    string description = 2;
+    int32 row_no = 3;
+    double amount = 4;
+    double total = 5;
+    double quantity=6;
+}
+
+message TotalRecord {
+    int32 panel = 1;
+    int32 row_no = 3;
+    double total = 4;
+    string total_text = 5;
+    double balance=6;
+    string balance_text=7;
+}
+
+message ReloadRecord {
+    repeated LineRecord lines = 1;
+    TotalRecord total =2;
+}
+
+service DisplayService {
+	rpc StopIt(DisplayRecord) returns (Void) {}
+	rpc RunDemo(DisplayRecord) returns (Void) {}
+	rpc ClearDisplay(DisplayRecord) returns (Void) {}
+	rpc DeleteDisplay(DisplayRecord) returns (Void) {}
+	rpc ShowLine(LineRecord) returns (Void) {}
+	rpc ShowTotal(TotalRecord) returns (Void) {}
+    rpc Reload(ReloadRecord) returns(Void) {}
+}
+

@@ -1,0 +1,31 @@
+syntax = "proto3";
+package UserProto;
+
+import "google/protobuf/timestamp.proto";
+//import "google/protobuf/empty.proto";
+
+message Date {
+    google.protobuf.Timestamp datetime=1;
+}
+
+message BinaryData {
+	bytes data=1;
+}
+
+message User {
+  string email=1;
+  string name=2;
+  string password=3;
+  string telephone=4;
+  string site_uuid=5;
+  string user_uuid=6;
+  string content_roles=7;
+  string roles=8;
+  string address=9;
+  string session_uuid=10;
+  string error_message=11;
+  google.protobuf.Timestamp date_created=12;
+  google.protobuf.Timestamp last_login_date=13;
+  google.protobuf.Timestamp last_logout_date=14;
+
+}

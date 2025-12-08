@@ -1,0 +1,310 @@
+
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "auth_database.proto";
+package ArhamProto;
+
+// enum ServerSetting {
+//     first_dummy=0;
+//     web_port_no = 9090;
+//     grpc_port_no = 40333;
+// }
+
+message FeeStructure {
+    double annual_fee=1; // RM10 per person
+    double renewal_fee=2; // RM10 per group
+    double registration_fee=3; // RM30 per group
+    int32 current_accounting_year=4;
+}
+
+
+message ServerKey {
+    FeeStructure fees = 1;
+    map<string, string> keys = 2;
+}
+
+message Node {
+    string id=1;
+    string code=2;
+    string name=3;
+    string parent_id=4;
+    bool allow_insert=5;
+    repeated Node children=7;
+    EntityList entity_list=8;
+    string entity_id=9;
+    string grand_parent_id=10;
+}
+
+message StringList {
+    repeated string list = 1;
+}
+
+message Relationship {
+    Entity entity = 1;
+    AuthDatabaseProto.TypeRecord type = 2;
+}
+
+message Entity {
+    string id=1;
+    string code=2;
+    string name=3;
+    string description=4;
+    repeated AuthDatabaseProto.TypeRecord types=5;
+    string fts_id=6;
+    string address=7;
+    string phone_no=8;
+    string address_group=9;
+    repeated Relationship related_to=10;
+    string active_flag=11;
+    bool is_deleted=12;
+    string house_no=13;
+    string message=14;
+    google.protobuf.Timestamp time_created=15;
+    google.protobuf.Timestamp date_of_birth=16;
+    google.protobuf.Timestamp date_of_death=17;
+    int32 year_created=18;
+}
+
+message EntityList {
+    AuthDatabaseProto.TypeRecord type=3;
+    repeated Entity list=4;
+}
+
+enum OrderBy {
+    by_ic = 0;
+    by_name = 1;
+    by_address = 2;
+    by_house_no = 3;
+}
+
+enum FilterBy {
+    no_filter = 0;
+    unpaid = 1;
+    paid = 2;
+    deceased = 3;
+    new_member=4;
+}
+
+message SearchParam {
+    AuthDatabaseProto.TypeRecord type=1;
+    OrderBy order_by = 2;
+    string search_key=4;
+    int32 year=5;
+    FilterBy filter_by = 6;
+}
+
+message BillDetail {
+    string id = 1;
+    double amount = 3;  
+    string description = 4;
+    Entity entity = 5;
+}
+
+message DeathReport {
+    Entity entity = 1;
+    string description = 2;
+    google.protobuf.Timestamp time_created=3;
+    google.protobuf.Timestamp date_of_death=4;
+}
+
+message Bill {
+    string id = 1;
+    Entity entity = 2;
+    AuthDatabaseProto.TypeRecord type=3;
+    string billcode=4;
+    string description=5;
+    google.protobuf.Timestamp transaction_date=6;
+    google.protobuf.Timestamp time_created=7;
+    repeated BillDetail list = 8;
+    int32 accounting_year=9;
+    double total_amount=10;
+    double total_paid=11;
+    repeated PaymentReceived payments=12;
+}
+
+message InvoiceDetail {
+    string id = 1;
+    double amount = 3;  
+    string description = 4;
+    Entity entity = 5;
+}
+
+message Invoice {
+    string id = 1;
+    Entity entity = 2;
+    AuthDatabaseProto.TypeRecord type=3;
+    string description=4;
+    google.protobuf.Timestamp transaction_date=6;
+    google.protobuf.Timestamp time_created=7;
+    repeated InvoiceDetail list = 8;
+    int32 accounting_year=9;
+    double total_amount=10;
+}
+
+message PaymentMade {
+    string reference = 1;
+    string approval_code = 2;
+    string description = 3;
+    double amount  = 4;
+    string invoice_id = 5;
+    AuthDatabaseProto.TypeRecord pay_by = 6;
+    google.protobuf.Timestamp transaction_date=7;
+    google.protobuf.Timestamp time_created=8;
+}
+
+message PaymentReceived {
+    string reference_no = 1; 
+    string status = 2; // 1=ok, 2=pending, 3=failed.
+    string reason = 3;
+    string billcode = 4; // from toyyibPay
+    string bill_access_code = 5;  // actual folder/dbname/billid
+    double amount = 6;
+    string bill_id = 7;
+    AuthDatabaseProto.TypeRecord pay_by = 8;
+    google.protobuf.Timestamp transaction_date=9;
+    google.protobuf.Timestamp time_created=10;
+}
+
+message TransactionHistory {
+    repeated Bill list=1;
+}
+
+message PaymentRequest {
+    AuthDatabaseProto.DBName db=1;
+    Entity entity=2;
+    double amount=3;
+    string email=5;
+    AuthDatabaseProto.TypeRecord pay_by = 6;
+    string ref_no=7;
+}
+
+message NewsDetail {
+    string id=1;
+    string title = 2;
+    string image_url = 3;
+    string description = 4;
+    AuthDatabaseProto.User creator = 5;
+    google.protobuf.Timestamp time_created=6;
+}
+
+message ScrollingBanner {
+    repeated string urlList = 1;
+}
+
+message NewsList {
+    repeated NewsDetail list = 1;
+}
+
+message PaymentRecord {
+    AuthDatabaseProto.TypeRecord pay_by=1;
+    double bill_amount=2;
+    double paid_amount=3;
+    string reference_no=4;
+    string status=5;
+    string billcode=6;
+    google.protobuf.Timestamp transaction_date=7;
+    google.protobuf.Timestamp time_created=8;
+    string accounting_year=9;
+    Entity entity=10;
+}
+
+/*
+      "select "
+        "   paybyid, "
+        "   b.accountingYear "
+        "   strftime('%Y', pr.transactionDate/1000, 'unixepoch', 'localtime') as calyear, "
+        "   strftime('%m', pr.transactionDate/1000, 'unixepoch', 'localtime') as calmonth, "
+        "   strftime('%u', pr.transactionDate/1000, 'unixepoch', 'localtime') as calweek, "
+        "   ifnull(ent.periodCreated, 2023), "
+        "   (select area from entityfts where rowid=ent.ftsid) as area, "
+        "   sum(select sum(amount) from billdetail where billid=b.id), "
+        "   count(*) "
+*/
+message PaymentSummary {
+    AuthDatabaseProto.TypeRecord pay_by=1;
+    string accounting_year=2;
+    string calendar_year=3;
+    string calendar_month=4;
+    string calendar_week=5;
+    string year_joined=6;
+    bool is_new=7;
+    string area=8;
+    double amount=9;
+    int64 count=10;
+    int64 no_of_payors=11;
+    int64 no_of_family_members=12;
+}
+
+message PaymentRecordList {
+    repeated PaymentRecord list=1;
+}
+
+message PaymentSummaryList {
+    repeated PaymentSummary list=1;
+}
+
+message SearchPayment {
+    string pay_by_id=1;
+    string billcode=2;
+    google.protobuf.Timestamp from_date=3;
+    google.protobuf.Timestamp to_date=4;
+    string accounting_year=5;
+    string entity_search=6;
+    string ref_no_search=7;
+    string new_member_search=8;
+}
+
+service ArhamService {
+    rpc GetFeeStructure(google.protobuf.Empty) returns (FeeStructure) {}
+    rpc GetServerKey(google.protobuf.Empty) returns (ServerKey) {}
+    rpc GetVersionNo(google.protobuf.Empty) returns (AuthDatabaseProto.StringValue) {}
+    rpc CreateDatabase(AuthDatabaseProto.DBName) returns (AuthDatabaseProto.DBList) {}
+    rpc DeleteDatabase(AuthDatabaseProto.DBName) returns (AuthDatabaseProto.DBList) {}
+
+    rpc GetTypeList(AuthDatabaseProto.StringValue) returns (AuthDatabaseProto.TypeList) {}
+
+    rpc SaveNode(Node) returns (Node) {}
+    rpc AddNode(Node) returns (Node) {}
+    rpc DeleteNode(Node) returns (Node) {}
+
+    rpc GetAccountTree(google.protobuf.Empty) returns (Node) {}
+    rpc GetYears(google.protobuf.Empty) returns (StringList) {}
+
+    rpc GetEntityList(SearchParam) returns (EntityList) {}
+    rpc GetEntityListInGroup(EntityList) returns (EntityList) {}
+    rpc SetEntity(Entity) returns (Entity) {}
+    rpc GetEntity(Entity) returns (Entity) {}
+    rpc GetEntitySingle(Entity) returns (Entity) {}
+    rpc DeleteEntity(Entity) returns (AuthDatabaseProto.BoolValue) {}
+    rpc SearchEntity(SearchParam) returns (EntityList) {}
+    rpc AddDependent(Entity) returns (Entity) {}
+
+    rpc MakePayment(PaymentRequest) returns (AuthDatabaseProto.StringValue) {} // via toyyib
+    rpc PayViaToyyib(PaymentRequest) returns (AuthDatabaseProto.StringValue) {} // via toyyib
+    rpc PayDirect(PaymentRequest) returns (AuthDatabaseProto.StringValue) {} // via toyyib
+
+    // rpc GetLatestBill(Entity) returns (TransactionRecord) {}
+    // rpc GetLatestBill2(Entity) returns (TransactionHistory) {}
+    // rpc GetHistory(Entity) returns (TransactionHistory) {}
+    // rpc GetCurrent(Entity) returns (TransactionHistory) {}
+
+    rpc GetAllBillHistory(Entity) returns (TransactionHistory) {}
+    rpc GetBillLastYear(Entity) returns (TransactionHistory) {}
+    rpc GetBillCurrentYear(Entity) returns (TransactionHistory) {}
+
+    rpc GetAllPaymentHistory(Entity) returns (TransactionHistory) {}
+    rpc GetPaymentLastYear(Entity) returns (TransactionHistory) {}
+    rpc GetPaymentCurrentYear(Entity) returns (TransactionHistory) {}
+
+    rpc GetNewsList(Entity) returns (NewsList) {} // to use entity as filter of how news is read.
+    rpc GetNews(NewsDetail) returns (NewsDetail) {}
+
+    rpc GetScrollingBanner(google.protobuf.Empty) returns (NewsList) {}
+    rpc ReportDeath(DeathReport) returns (google.protobuf.Empty) {}
+
+    rpc GetPaymentRecord(SearchPayment) returns (PaymentRecordList) {}
+    rpc GetPaymentSummary(SearchPayment) returns (PaymentSummaryList) {}
+    rpc GetPaymentSummaryByPayBy(SearchPayment) returns (PaymentSummaryList) {}
+}
