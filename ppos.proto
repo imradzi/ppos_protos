@@ -175,7 +175,7 @@ message StockRecord {
     repeated PersonRecord sales_reps=32;
     string qoh_string=33; //q+l format
     repeated StockCategoryRecord category_list=34;
-    rrepeated string category_hierachy = 35; // for filter matching during print by category.
+    repeated string category_hierachy = 35; // for filter matching during print by category.
     int32 fav_rating=36;
     string parent_id=37;
 }
