@@ -175,7 +175,7 @@ message StockRecord {
     repeated PersonRecord sales_reps=32;
     string qoh_string=33; //q+l format
     repeated StockCategoryRecord category_list=34;
-    repeated string category_hierachy = 35; // for filter matching during print by category. 
+    rrepeated string category_hierachy = 35; // for filter matching during print by category.
     int32 fav_rating=36;
     string parent_id=37;
 }
@@ -286,7 +286,7 @@ message LoginSessionRecord {
     google.protobuf.Timestamp expiry_date=6;
     google.protobuf.Timestamp time_in=7;
     google.protobuf.Timestamp time_out=8;
-    int64 id = 9;  // sessionID
+    int64 id = 9; // sessionID
     string application_name=10;
     string outlet_code=11;
     string outlet_name=12;
@@ -299,6 +299,10 @@ message LoginSessionRecord {
     string system_user=19;
     string working_folder=20;
 }
+
+message LoginSessionRecordList {
+    repeated LoginSessionRecord list=1;
+}   
 
 enum EventType {
     ev_unassigned = 0;
@@ -609,7 +613,7 @@ message MessageRecord {
     wpObject base=1;
     string id =2;
     google.protobuf.Timestamp effective_date=3;
-    LexiconRecord message_type=4;  // 1=receiptPrinter, 2=customerDisplay
+    LexiconRecord message_type=4; // 1=receiptPrinter, 2=customerDisplay
     string priority=5;
     google.protobuf.Timestamp from_date=6;
     google.protobuf.Timestamp to_date=7;
@@ -671,10 +675,10 @@ message PaymentRecord {
     wpObject base=1;
     double amount=2;
     double tendered=3;
-    string id=4;       // paymentID
-    string sales_id=5;  // if blank, use the SalesRecord id. By itself it should not be blank.
+    string id=4; // paymentID
+    string sales_id=5; // if blank, use the SalesRecord id. By itself it should not be blank.
     google.protobuf.Timestamp payment_date=6;
-    TypeRecord payment_method=7;  // type 10 - paidBy
+    TypeRecord payment_method=7; // type 10 - paidBy
     string reference=8;
     CompanyRecord payor=9;
     double reward_point=10;
@@ -873,7 +877,7 @@ message AccountTransactionRecord {
     google.protobuf.Timestamp transaction_date=8;
     EntityRecord entity_from=9;
     EntityRecord entity_to=10;
-    string type=11;  // out or in
+    string type=11; // out or in
     repeated AccountJournalRecord list=12;
 }
 
@@ -1081,6 +1085,7 @@ service Auth {
 	rpc SetUserRecord(UserRecord) returns (UserRecord) {}
 	rpc ValidateUser(UserRecord) returns (ReturnStatus) {}
 	rpc ValidateUserEmail(UserRecord) returns (ReturnStatus) {}
+    rpc GetLoginSessionRecordList(LoginSessionRecord) returns (LoginSessionRecordList) {}
 }
 
 service Config {
@@ -1359,8 +1364,8 @@ message ServerKeyRecord {
     int32 theme_color_red = 35;
     int32 theme_color_green = 36;
     int32 theme_color_blue = 37;
-    bool run_script_in_db_location = 38;  // run all script root folder in the same as current DB folder
-    bool save_stock_pack_prices  = 39;   // to save price by category in StockPackPrices - meaning that this will detach the price for edited item from stockpricecategory factorAboveCost
+    bool run_script_in_db_location = 38; // run all script root folder in the same as current DB folder
+    bool save_stock_pack_prices  = 39; // to save price by category in StockPackPrices - meaning that this will detach the price for edited item from stockpricecategory factorAboveCost
     bool show_category_in_sales_summary_pdf = 40;
     bool show_category_in_sales_summary_receipt_printer = 41;
     bool show_discount_on_wholesales_invoice = 42;
@@ -1374,15 +1379,15 @@ message ServerKeyRecord {
     bool show_reward_points = 50;
     bool show_total_discount_on_receipt = 51;
     bool truncate_sum = 52;
-    bool use_rm_only_for_points = 54;  // no cents
-    bool whs_use_cost = 55;      // use cost price in wholesales
+    bool use_rm_only_for_points = 54; // no cents
+    bool whs_use_cost = 55; // use cost price in wholesales
     bool pso_use_only_poison = 56;
     int64 this_outlet_entity_id = 57;
     int64 this_outlet_entity_id_sales = 58;
     bool share_membership = 59;
     double rm_to_one_point = 60;
     double points_to_one_rm = 144;   
-    double qr_image_factor = 61;  // 1=full page, 0.5, half
+    double qr_image_factor = 61; // 1=full page, 0.5, half
     double membership_qr_image_factor = 62;
     int32 age_active_in_months = 63;
     bool allow_edit_invoice_record = 64;
@@ -1426,7 +1431,7 @@ message ServerKeyRecord {
     string cash_sales_type_id = 102;
     string category_list_cross_tab = 103; 
     string credit_sales_type_id = 104;
-    string default_column_for_zero_cost_insales = 105;  // latestCost, weightedAvgCost, maxCost
+    string default_column_for_zero_cost_insales = 105; // latestCost, weightedAvgCost, maxCost
     string default_service_charge_percentage = 106;
     string entity_type_customer = 107;
     string entity_type_group_id = 108;
@@ -1434,10 +1439,10 @@ message ServerKeyRecord {
     string entity_type_promoter = 110;
     string entity_type_supplier = 111;
     string first_day_ofweek = 112;
-    string gst_marker = 113;  // S
+    string gst_marker = 113; // S
     string gst_reg_no = 114;
-    string gst_zero_marker    = 115;    // Z
-    string invoice_disclaimer = 116;  // print on invoice
+    string gst_zero_marker    = 115; // Z
+    string invoice_disclaimer = 116; // print on invoice
     string os_version = 117;
     string outlet_address = 118;
     string outlet_code = 119;
@@ -1455,8 +1460,8 @@ message ServerKeyRecord {
     string poison_category_type_group_id = 131;
     string price_category_group_id = 132;
     string qr_string = 133;
-    string quotation_disclaimer = 134;      // print on quotation
-    string reference_cost_for_selling_price = 135;  // max, latest, average
+    string quotation_disclaimer = 134; // print on quotation
+    string reference_cost_for_selling_price = 135; // max, latest, average
     string stock_transaction_type_group_id = 136;
     string stock_type_group_id = 137;
     string tax_gst_type_id = 138;
@@ -1503,7 +1508,7 @@ message ServerKeyRecord {
     bool sales_summary_with_border=171;
     string authorize_as_group_id = 172;
 
-    double logo_image_factor = 173;  // 1=full page, 0.5, half
+    double logo_image_factor = 173; // 1=full page, 0.5, half
     bool enable_set_stock_active_date_all_outlet = 174;
     bool reload_transaction_items_by_name = 175;
 
@@ -1525,5 +1530,5 @@ message ServerKeyRecord {
     bool alert_larger_cost_input=195;
 
     bool enable_e_invoice=196;
-    string e_invoice_setting=197;  // e-invoice setting
+    string e_invoice_setting=197; // e-invoice setting
 }
