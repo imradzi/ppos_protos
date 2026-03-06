@@ -340,6 +340,7 @@ message ServerEventMessage {
 	    string code=1;
 	    string key=2;
 	    string value=3;
+        int32 broadcast_type=4; // 0=to all, 1=to company, 2=to outlet, 3=to owner only
     }
 
 	wpObject base=1;
