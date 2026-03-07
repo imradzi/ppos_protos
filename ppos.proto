@@ -247,6 +247,7 @@ message DatabaseRecord {
     google.protobuf.Timestamp expiry_date=6;
     string group_filter=7;
     string uuid=8;
+    string chat_group=9;
 }
 
 message TerminalRecord {
