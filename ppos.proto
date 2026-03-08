@@ -554,22 +554,6 @@ message AvailableDBList {
 	repeated AvailableDB list=1;
 }
 
-message AvailableServer {
-	int64 id=1;
-	string code=2;
-    string host_name=3;
-    string port_no=4;
-	string name=5;
-	string master_db=6;
-	string trans_db=7;
-    string group_filter=8;
-    google.protobuf.Timestamp expiry_date=9;    
-}
-
-message AvailableServerList {
-	repeated AvailableServer list=1;
-}
-
 message InterchangeData {
 	string session_key = 1;
 	bytes serialized = 2;
@@ -1114,7 +1098,6 @@ service Config {
 	rpc DownloadFile(GetFileParameter) returns (stream BinaryData) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetMyAvailableDB(Void) returns (AvailableDBList) {} 
-	rpc GetAvailableServer(Void) returns (AvailableServerList) {} 
 	rpc GetAuthorizeAs(Void) returns (TypeRecordList) {} 
 
 	rpc SaveScreen(ScreenPerspectiveRecord) returns (Void) {}
