@@ -7,6 +7,7 @@ package PPOS;
 message Void {
     string session_key=1;
     string group_filter=2;
+    string chat_group=3;
 }
 
 message StringList {
@@ -548,6 +549,7 @@ message AvailableDB {
     string group_filter=8;
     google.protobuf.Timestamp expiry_date=9;
     string uuid=10;
+    string chat_group=11;
 }
 
 message AvailableDBList {
@@ -1098,6 +1100,8 @@ service Config {
 	rpc DownloadFile(GetFileParameter) returns (stream BinaryData) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetMyAvailableDB(Void) returns (AvailableDBList) {} 
+	rpc GetAvailableDB_ByGroupFilter(Void) returns (AvailableDBList) {} 
+	rpc GetAvailableDB_ByChatGroup(Void) returns (AvailableDBList) {} 
 	rpc GetAuthorizeAs(Void) returns (TypeRecordList) {} 
 
 	rpc SaveScreen(ScreenPerspectiveRecord) returns (Void) {}
