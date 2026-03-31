@@ -276,6 +276,7 @@ message UserRecord {
 	repeated string screen_set=15;
     repeated string allowed_db_set=16;
     repeated LexiconRecord allowed_db=17;
+    string id_token=18;
 }
 
 

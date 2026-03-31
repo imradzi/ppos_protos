@@ -73,6 +73,7 @@ message Session {
     string message=6;
     string chat_key=7;
     string group_filter=8;
+    string id_token=9;
 }
 
 message ApproveEmail {
