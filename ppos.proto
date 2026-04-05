@@ -334,7 +334,9 @@ enum EventType {
     ev_accounting=23;
     ev_chat=24;
     ev_info=25;
-    ev_num_event=26;
+    ev_customer_request=26;
+    ev_close=27;
+    ev_num_event=28;
 };
 
 
