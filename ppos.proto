@@ -336,7 +336,8 @@ enum EventType {
     ev_info=25;
     ev_customer_request=26;
     ev_close=27;
-    ev_num_event=28;
+    ev_category=28;
+    ev_num_event=29;
 };
 
 
