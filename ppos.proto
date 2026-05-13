@@ -1217,6 +1217,7 @@ service Stock {
 	rpc GetCategory(StringData) returns (StockCategory) {}
     rpc SearchStockItem(StringData) returns (StockCategoryList) {}
     rpc DeleteCategory(StockCategory) returns (ReturnStatus) {}
+    rpc DeleteStockCategory(StockRecord) returns (ReturnStatus) {}
 
     rpc GetStockID(StockRecord) returns (StockRecord) {}
 	rpc GetStockRecord(StockRecord) returns (StockRecord) {}
