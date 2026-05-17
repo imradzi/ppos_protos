@@ -1009,6 +1009,14 @@ message StockCategory {
     string session_key=3;
 }
 
+message ReparentStockCategory {
+    string session_key=1;
+    string node_id = 2;
+    string parent_id = 3;
+    string new_parent_id = 4;
+    bool is_copy = 5;
+}
+
 message StockCategoryList {
     StockCategory node=1;
     repeated StockCategoryList children=2;
@@ -1218,6 +1226,7 @@ service Stock {
     rpc SearchStockItem(StringData) returns (StockCategoryList) {}
     rpc DeleteCategory(StockCategory) returns (ReturnStatus) {}
     rpc DeleteStockCategory(StockRecord) returns (ReturnStatus) {}
+    rpc ReparentCategory(ReparentStockCategory) returns (ReturnStatus) {}
 
     rpc GetStockID(StockRecord) returns (StockRecord) {}
 	rpc GetStockRecord(StockRecord) returns (StockRecord) {}
