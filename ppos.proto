@@ -15,7 +15,7 @@ message StringList {
 }
 
 message BinaryData {
-        bytes data=1;
+    bytes data=1;
 }
 message wpObject {
     string ops=1;
@@ -137,6 +137,7 @@ message PersonRecord {
 	LexiconRecord job=8;
 }
 
+
 message StockRecord {
 	EntityRecord base = 1;
     string dispensing_instruction=2;
@@ -176,7 +177,7 @@ message StockRecord {
     repeated PersonRecord sales_reps=32;
     string qoh_string=33; //q+l format
     repeated StockCategoryRecord category_list=34;
-    repeated string category_hierachy = 35; // for filter matching during print by category.
+    repeated StringList category_hierachy = 35; // for filter matching during print by category.
     int32 fav_rating=36;
     string parent_id=37;
 }
