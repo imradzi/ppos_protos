@@ -126,6 +126,10 @@ if (MSVC)
     add_compile_options(-DNO_PNG)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     #set_property(GLOBAL PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang")
+	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fno-common -pedantic -pedantic-errors -Wall -Wextra -Werror \
+  -Wno-missing-field-initializers -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls \
+	-Wshadow -Wswitch-default -Wundef -Wno-switch-default -Wno-unused-parameter -Wno-shadow")
 else()
 	SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -fno-common -pedantic -pedantic-errors -Wall -Wextra -Werror \
   -Wno-deprecated-enum-enum-conversion -Wno-missing-field-initializers -Wmissing-include-dirs -Woverloaded-virtual -Wredundant-decls \
