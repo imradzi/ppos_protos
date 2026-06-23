@@ -1249,6 +1249,7 @@ service Stock {
 	rpc AdjustStockQOH(StockTransactionRecord) returns (Void) {}
 	rpc AddStockToReorderList(StockRecord) returns (Void) {}
 	rpc ComputeExpiry(StockRecord) returns (Void) {}
+    rpc ComputeStockMetric(MenuActionParam) returns (Void) {}
 	rpc GetStockByReceiveID(StockTransactionRecord) returns (StockTransactionRecord) {}
     rpc GetStockReceiveBatch(StockReceiveBatchList) returns (StockReceiveBatchList) {}
 	rpc GetStockPackingByBarCode(StockTransactionRecord) returns (StockTransactionRecord) {}
