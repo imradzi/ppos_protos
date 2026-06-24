@@ -433,6 +433,7 @@ message RequestReport {
     google.protobuf.Timestamp from_date=1;
 	google.protobuf.Timestamp to_date=2;
     string type_of_sales=3;
+    string session_key=4;
 }
 
 message RequestInfoRecord {
@@ -1249,7 +1250,7 @@ service Stock {
 	rpc AdjustStockQOH(StockTransactionRecord) returns (Void) {}
 	rpc AddStockToReorderList(StockRecord) returns (Void) {}
 	rpc ComputeExpiry(StockRecord) returns (Void) {}
-    rpc ComputeStockMetric(MenuActionParam) returns (Void) {}
+    rpc ComputeStockMetric(RequestReport) returns (Void) {}
 	rpc GetStockByReceiveID(StockTransactionRecord) returns (StockTransactionRecord) {}
     rpc GetStockReceiveBatch(StockReceiveBatchList) returns (StockReceiveBatchList) {}
 	rpc GetStockPackingByBarCode(StockTransactionRecord) returns (StockTransactionRecord) {}
