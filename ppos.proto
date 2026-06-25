@@ -1337,6 +1337,7 @@ message InvestigationRequest {
     string question = 2;
     string context = 3;             // optional background/context for the AI
     string conversation_id = 4;     // for multi-turn conversation continuity
+    string provider_name = 5;       // which AI provider to use (empty = default)
 }
 
 message InvestigationResponse {
@@ -1347,8 +1348,21 @@ message InvestigationResponse {
     string error_message = 5;
 }
 
+message AIChatProvider {
+    string name = 1;            // display name, e.g. "DeepSeek", "OpenAI", "Groq"
+    string base_url = 2;        // API base URL
+    string default_model = 3;   // default model for this provider
+    bool requires_api_key = 4;  // whether this provider needs an API key
+    string description = 5;     // short description for UI
+}
+
+message AIChatProviderList {
+    repeated AIChatProvider providers = 1;
+}
+
 service Investigator {
     rpc Investigate(InvestigationRequest) returns (InvestigationResponse) {}
+    rpc ListAIProviders(Void) returns (AIChatProviderList) {}
 }
 
 
