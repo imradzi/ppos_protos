@@ -1363,6 +1363,48 @@ message AIChatProviderList {
 service Investigator {
     rpc Investigate(InvestigationRequest) returns (InvestigationResponse) {}
     rpc ListAIProviders(Void) returns (AIChatProviderList) {}
+    rpc SaveChatSession(ChatSessionRecord) returns (ChatSessionId) {}
+    rpc LoadChatSession(ChatSessionId) returns (ChatSessionRecord) {}
+    rpc ListChatSessions(ChatSessionListRequest) returns (ChatSessionList) {}
+    rpc DeleteChatSession(ChatSessionId) returns (ReturnStatus) {}
+}
+
+// ── Chat session persistence ────────────────────────────────────────
+
+message ChatMessage {
+    string role = 1;     // "user" or "ai"
+    string content = 2;
+}
+
+message ChatSessionRecord {
+    wpObject base = 1;
+    string session_id = 2;           // empty = create new
+    string window_name = 3;          // scoping key (e.g. "CashSalesWindow")
+    string title = 4;               // first user question
+    repeated ChatMessage messages = 5;
+    int64 created_at = 6;
+    int64 updated_at = 7;
+}
+
+message ChatSessionId {
+    wpObject base = 1;
+    string session_id = 2;
+}
+
+message ChatSessionSummary {
+    string session_id = 1;
+    string title = 2;
+    int64 created_at = 3;
+    int64 updated_at = 4;
+}
+
+message ChatSessionList {
+    repeated ChatSessionSummary sessions = 1;
+}
+
+message ChatSessionListRequest {
+    wpObject base = 1;
+    string window_name = 2;          // filter by window (empty = all)
 }
 
 
