@@ -545,6 +545,18 @@ message StringRow {
 	repeated string data = 1;
 }
 
+message Host {
+    int32 id = 1;
+    string name=2;
+    string address=3;
+    int32 port=4;
+    string description=5;
+}
+
+message HostList {
+    repeated Host list=1;
+}
+
 message AvailableDB {
 	int64 id=2;
 	string code=3;
@@ -556,6 +568,7 @@ message AvailableDB {
     google.protobuf.Timestamp expiry_date=9;
     string uuid=10;
     string chat_group=11;
+    string owner_email=12;
 }
 
 message AvailableDBList {
@@ -1112,6 +1125,8 @@ service Config {
 	rpc DeleteTypeRecord(TypeRecord) returns (ReturnStatus) {}
 
 	rpc DownloadFile(GetFileParameter) returns (stream BinaryData) {}
+    rpc GetHostList(Void) returns (HostList) {}
+    rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetMyAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetAvailableDB_ByGroupFilter(Void) returns (AvailableDBList) {} 
