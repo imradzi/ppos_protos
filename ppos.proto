@@ -1628,4 +1628,6 @@ message ServerKeyRecord {
 
     bool enable_e_invoice=196;
     string e_invoice_setting=197; // e-invoice setting
+    bool enable_set_stock_active_date_from_other_outlet=198;
+    bool enable_delete_stock_pack_prices_from_other_outlet=199;
 }
