@@ -574,6 +574,20 @@ message AvailableDB {
 message AvailableDBList {
 	repeated AvailableDB list=1;
 }
+enum EntityType {
+    ET_User = 0;
+    ET_Member = 1;
+    ET_SalesRep = 2;
+    ET_SalesPromoter = 3;
+    ET_Customer = 4;
+    ET_OnlineCustomer = 5;
+    ET_Supplier = 6;
+    ET_OnlineSupplier = 7;
+}
+message GetAccessibleDBRequest {
+    string email = 1;
+    EntityType entityType=2;
+}
 
 message InterchangeData {
 	string session_key = 1;
@@ -1131,6 +1145,7 @@ service Config {
 	rpc GetMyAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetAvailableDB_ByGroupFilter(Void) returns (AvailableDBList) {} 
 	rpc GetAvailableDB_ByChatGroup(Void) returns (AvailableDBList) {} 
+	rpc GetAccessibleDB(GetAccessibleDBRequest) returns (AvailableDBList) {}
 	rpc GetAuthorizeAs(Void) returns (TypeRecordList) {} 
 
 	rpc SaveScreen(ScreenPerspectiveRecord) returns (Void) {}
