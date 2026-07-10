@@ -583,10 +583,21 @@ enum EntityType {
     ET_OnlineCustomer = 5;
     ET_Supplier = 6;
     ET_OnlineSupplier = 7;
+    ET_Unanymous = 8;
 }
 message GetAccessibleDBRequest {
     string email = 1;
     EntityType entityType=2;
+}
+
+message AccessDB_As {
+    string email = 1;
+    AvailableDB db = 2;
+    repeated EntityType access_as = 3;
+}
+
+message AccessDB_AsList {
+    repeated AccessDB_As list = 1;
 }
 
 message InterchangeData {
@@ -1146,6 +1157,7 @@ service Config {
 	rpc GetAvailableDB_ByGroupFilter(Void) returns (AvailableDBList) {} 
 	rpc GetAvailableDB_ByChatGroup(Void) returns (AvailableDBList) {} 
 	rpc GetAccessibleDB(GetAccessibleDBRequest) returns (AvailableDBList) {}
+    rpc GetAccessDB_As(GetAccessibleDBRequest) returns (AccessDB_AsList) {}
 	rpc GetAuthorizeAs(Void) returns (TypeRecordList) {} 
 
 	rpc SaveScreen(ScreenPerspectiveRecord) returns (Void) {}
