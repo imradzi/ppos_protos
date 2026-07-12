@@ -584,6 +584,7 @@ enum EntityType {
     ET_Supplier = 6;
     ET_OnlineSupplier = 7;
     ET_Unanymous = 8;
+    ET_Admin = 9;
 }
 message GetAccessibleDBRequest {
     string email = 1;
