@@ -1329,6 +1329,9 @@ service Stock {
     rpc DeleteStockImage(StockImageDeleteRequest) returns (ReturnStatus) {}
     rpc ListStockImages(StringData) returns (StockImageList) {}
 
+    // Search stock list with images, prices, and quantity balance
+    rpc GetSearchStockList(StringData) returns (StockSearchResultList) {}
+
 }
 
 service Membership {
@@ -1422,6 +1425,27 @@ message StockImageList {
     wpObject base = 1;
     string stock_id = 2;
     repeated StockImageRecord images = 3;
+}
+
+// GetSearchStockList response messages
+message StockSearchResultItem {
+    string id = 1;                        // stock entity ID
+    string code = 2;                      // stock code
+    string name = 3;                      // stock name / display name
+    string description = 4;               // item description (from EntityFTS gettoken 3)
+    string image_url = 5;                 // path to primary stock image (imageNo=0), for DownloadFile
+    string thumbnail_url = 6;             // path to primary stock thumbnail (imageNo=0), for DownloadFile
+    repeated PackingRecord pack_records = 7;  // price for each pack type
+    double qoh = 8;                       // quantity on hand (loose form)
+    string qoh_string = 9;                // formatted QOH string (e.g. "5+3L")
+    string type_name = 10;                // stock type name (e.g. "Medicine", "Supplement")
+}
+
+message StockSearchResultList {
+    wpObject base = 1;
+    string search_term = 2;               // the search term used
+    int32 total_count = 3;                // total matching items
+    repeated StockSearchResultItem items = 4;
 }
 
 message InvestigationRequest {
