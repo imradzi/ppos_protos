@@ -1399,6 +1399,9 @@ message StockImageRecord {
     int32 thumb_width = 11;
     int32 thumb_height = 12;
     int64 thumb_file_size = 13;
+    // Server-provided DownloadFile paths (so the gateway never constructs them)
+    string file_path = 14;
+    string thumb_path = 15;
 }
 
 message StockImageUploadRequest {
@@ -1439,6 +1442,9 @@ message StockSearchResultItem {
     double qoh = 8;                       // quantity on hand (loose form)
     string qoh_string = 9;                // formatted QOH string (e.g. "5+3L")
     string type_name = 10;                // stock type name (e.g. "Medicine", "Supplement")
+    // All image URLs for the carousel (image 0, 1, 2, ...)
+    repeated string all_image_urls = 11;        // full image paths for DownloadFile
+    repeated string all_thumbnail_urls = 12;    // thumbnail paths for DownloadFile
 }
 
 message StockSearchResultList {
