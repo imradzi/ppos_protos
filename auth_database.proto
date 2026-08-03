@@ -35,9 +35,21 @@ message TypeList {
     repeated TypeRecord list=1;
 }
 
+enum USER_DB_ROLE {
+    UDB_ROLE_Owner = 0;
+    UDB_ROLE_Authorizer = 1;
+    UDB_ROLE_Admin = 2;
+    UDB_ROLE_Moderator = 3;
+    UDB_ROLE_Primary = 4;
+    UDB_ROLE_Merchant = 5;
+    UDB_ROLE_Participant = 6;
+    UDB_ROLE_Account = 7;
+}
+
 message DatabaseRole {
     string db_name=1;
-    TypeRecord roles=2;
+    repeated TypeRecord roles=2;
+    repeated USER_DB_ROLE db_roles=3;
 }
 
 message User {
