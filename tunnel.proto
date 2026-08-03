@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package PPOS;
+
+// ── Heartbeat ──────────────────────────────────────────────────────
+
+message Ping {}
+message Pong {
+    google.protobuf.Timestamp server_time = 1;
+}
+
+// ── Registration ───────────────────────────────────────────────────
+
+message RegisterRequest {
+    string server_id = 1;       // persisted UUID, generated once per ppServer
+    string pairing_token = 2;   // opaque token minted by owner on the gateway
+    string display_name = 3;    // human-readable name for the PWA
+    string app_version = 4;     // ppServer version string
+}
+
+message RegisterResponse {
+    bool accepted = 1;
+    string owner_email = 2;     // set when accepted
+    string message = 3;         // reason when rejected
+}
+
+// ── Proxied RPC ────────────────────────────────────────────────────
+
+message MetadataEntry {
+    string key = 1;
+    string value = 2;
+}
+
+// Gateway → ppServer: execute a gRPC method on the remote server.
+// The payload is the serialized request protobuf message.
+// The full_method is the gRPC method name (e.g. "/PPOS.Config/GetHostList").
+message RpcRequest {
+    string request_id = 1;              // unique, correlates request↔response
+    string full_method = 2;             // "/PPOS.Config/GetHostList"
+    repeated MetadataEntry metadata = 3; // gRPC metadata (auth headers etc.)
+    bytes payload = 4;                  // serialized request protobuf
+    int32 timeout_ms = 5;               // deadline hint (0 = no deadline)
+}
+
+// ppServer → Gateway: result of executing the proxied RPC.
+// For server-streaming methods, the entire stream is buffered into one payload.
+// Long-lived / bidirectional streams (e.g. Chat.StartChat) are NOT proxied in V1.
+message RpcResponse {
+    string request_id = 1;
+    bool ok = 2;                        // gRPC status OK
+    int32 status_code = 3;              // gRPC status code as int (0 = OK)
+    string error_message = 4;           // gRPC status details on failure
+    bytes payload = 5;                  // serialized response protobuf (or accumulated stream)
+}
+
+// ── Tunnel frame ───────────────────────────────────────────────────
+
+message TunnelFrame {
+    string frame_id = 1;  // unique per frame, for logging / dedup
+    oneof payload {
+        RegisterRequest     register        = 2;
+        RegisterResponse    register_ack    = 3;
+        RpcRequest          rpc_request     = 4;
+        RpcResponse         rpc_response    = 5;
+        Ping                ping            = 6;
+        Pong                pong            = 7;
+    }
+}
+
+// ── Service ────────────────────────────────────────────────────────
+
+service Tunnel {
+    // Persistent bidirectional stream: ppServer dials this, keeps it alive,
+    // gateway sends RegisterResponse+RpcRequest+Ping, ppServer sends
+    // RegisterRequest+RpcResponse+Pong over the same stream.
+    rpc Connect(stream TunnelFrame) returns (stream TunnelFrame);
+}
