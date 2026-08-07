@@ -1152,6 +1152,12 @@ service Config {
 
 	rpc DownloadFile(GetFileParameter) returns (stream BinaryData) {}
 	rpc UploadFile(InterchangeData) returns (ReturnStatus) {}
+
+	// Per-outlet PWA "Home" page (index.html). Scoped to the outlet's
+	// transaction db, so outlets sharing a master db each keep their own.
+	rpc GetOutletHomePage(Void) returns (OutletHomePageRecord) {}
+	rpc SetOutletHomePage(OutletHomePageUploadRequest) returns (OutletHomePageRecord) {}
+
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
@@ -1428,6 +1434,22 @@ message StockImageList {
     wpObject base = 1;
     string stock_id = 2;
     repeated StockImageRecord images = 3;
+}
+
+// Per-outlet PWA "Home" page (index.html), stored server-side using the
+// same save/retrieve mechanism as stock images (filesystem + metadata row)
+// but scoped to the outlet's transaction db rather than the shared master.
+message OutletHomePageRecord {
+    bool exists = 1;         // false if this outlet has no home page yet
+    int64 file_size = 2;
+    int64 date_updated = 3;
+    string updated_by = 4;   // email of the admin who last uploaded it
+    bytes html_data = 5;     // populated only by GetOutletHomePage
+}
+
+message OutletHomePageUploadRequest {
+    wpObject base = 1;
+    bytes html_data = 2;
 }
 
 // GetSearchStockList response messages
