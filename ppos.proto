@@ -1153,10 +1153,12 @@ service Config {
 	rpc DownloadFile(GetFileParameter) returns (stream BinaryData) {}
 	rpc UploadFile(InterchangeData) returns (ReturnStatus) {}
 
-	// Per-outlet PWA "Home" page (index.html). Scoped to the outlet's
-	// transaction db, so outlets sharing a master db each keep their own.
-	rpc GetOutletHomePage(Void) returns (OutletHomePageRecord) {}
-	rpc SetOutletHomePage(OutletHomePageUploadRequest) returns (OutletHomePageRecord) {}
+	// Per-outlet HTML pages (home, banner, info, announcement, etc.).
+	// Scoped to the outlet's transaction db, so outlets sharing a master
+	// db each keep their own pages.  The page_type string identifies
+	// which page to fetch/store (e.g. "home", "banner", "info", "announcement").
+	rpc GetOutletHTMLPage(OutletHTMLPageRequest) returns (OutletHTMLPageRecord) {}
+	rpc SetOutletHTMLPage(OutletHTMLPageUploadRequest) returns (OutletHTMLPageRecord) {}
 
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
@@ -1436,20 +1438,27 @@ message StockImageList {
     repeated StockImageRecord images = 3;
 }
 
-// Per-outlet PWA "Home" page (index.html), stored server-side using the
-// same save/retrieve mechanism as stock images (filesystem + metadata row)
-// but scoped to the outlet's transaction db rather than the shared master.
-message OutletHomePageRecord {
-    bool exists = 1;         // false if this outlet has no home page yet
-    int64 file_size = 2;
-    int64 date_updated = 3;
-    string updated_by = 4;   // email of the admin who last uploaded it
-    bytes html_data = 5;     // populated only by GetOutletHomePage
+// Per-outlet HTML page, stored server-side using the same save/retrieve
+// mechanism as stock images (filesystem + metadata row) but scoped to the
+// outlet's transaction db rather than the shared master.
+// Supports multiple page types: "home", "banner", "info", "announcement", etc.
+message OutletHTMLPageRequest {
+    string page_type = 1;    // e.g. "home", "banner", "info", "announcement"
 }
 
-message OutletHomePageUploadRequest {
+message OutletHTMLPageRecord {
+    string page_type = 1;    // e.g. "home", "banner", "info", "announcement"
+    bool exists = 2;         // false if this outlet has no page of this type yet
+    int64 file_size = 3;
+    int64 date_updated = 4;
+    string updated_by = 5;   // email of the admin who last uploaded it
+    bytes html_data = 6;     // populated only by GetOutletHTMLPage
+}
+
+message OutletHTMLPageUploadRequest {
     wpObject base = 1;
-    bytes html_data = 2;
+    string page_type = 2;    // e.g. "home", "banner", "info", "announcement"
+    bytes html_data = 3;
 }
 
 // GetSearchStockList response messages
