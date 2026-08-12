@@ -135,6 +135,7 @@ message PersonRecord {
 	LexiconRecord marital_status=6;
 	LexiconRecord gender=7;
 	LexiconRecord job=8;
+	string email=9;
 }
 
 
@@ -702,6 +703,106 @@ message MembershipRecord {
     double point_balance=2;
     string enroll_number=3;
     repeated string dependency_list=4;
+}
+
+// ── Health Records (MASTER-scoped per-chain) ──────────────────────────
+message ObservationComponent {
+    string name=1;      // e.g. "Systolic", "Diastolic", "Haemoglobin"
+    string value=2;     // e.g. "120"
+    string unit=3;      // e.g. "mmHg", "g/dL"
+}
+
+message HealthObservationRecord {
+    EntityRecord base=1;
+    LexiconRecord observation_type=2;   // Blood Pressure, Blood Glucose, Lipid Panel, etc.
+    repeated ObservationComponent components=3;
+    google.protobuf.Timestamp observation_date=4;
+    string patient_id=5;                // MembershipRecord id
+    string recorded_by=6;               // email of health professional
+    string outlet_code=7;
+    string notes=8;
+}
+
+message HealthObservationList {
+    repeated HealthObservationRecord list=1;
+    int32 total=2;
+}
+
+message AllergyRecord {
+    EntityRecord base=1;
+    string patient_id=2;
+    string allergen=3;                  // e.g. "Penicillin", "Peanuts"
+    LexiconRecord severity=4;           // Mild / Moderate / Severe
+    LexiconRecord reaction_type=5;      // e.g. "Anaphylaxis", "Rash"
+    string notes=6;
+    google.protobuf.Timestamp date_recorded=7;
+    string recorded_by=8;
+    bool active=9;
+}
+
+message AllergyList {
+    repeated AllergyRecord list=1;
+    int32 total=2;
+}
+
+message LongTermMedicationRecord {
+    EntityRecord base=1;
+    string patient_id=2;
+    string drug_name=3;
+    string dosage=4;
+    string frequency=5;
+    string notes=6;
+    google.protobuf.Timestamp start_date=7;
+    google.protobuf.Timestamp end_date=8;
+    string prescribed_by=9;
+    bool active=10;
+}
+
+message LongTermMedicationList {
+    repeated LongTermMedicationRecord list=1;
+    int32 total=2;
+}
+
+message MedicalHistoryEntry {
+    EntityRecord base=1;
+    string patient_id=2;
+    string description=3;
+    google.protobuf.Timestamp entry_date=4;
+    LexiconRecord category=5;          // e.g. "Surgery", "Diagnosis", "Hospitalisation"
+    string notes=6;
+    string recorded_by=7;
+    bool active=8;
+}
+
+message MedicalHistoryList {
+    repeated MedicalHistoryEntry list=1;
+    int32 total=2;
+}
+
+// ── Paginated list messages ───────────────────────────────────────────
+message MembershipListRequest {
+    string session_key=1;
+    string search=2;        // search by name / code / email / phone
+    int32 limit=3;
+    int32 offset=4;
+}
+
+message MembershipListRecord {
+    repeated MembershipRecord list=1;
+    int32 total=2;
+}
+
+message CompanyListRequest {
+    string session_key=1;
+    string search=2;
+    string company_type=3;  // "opscompany" (supplier), "opscustomer", "opssalesrep", "opspromoter"
+    int32 limit=4;
+    int32 offset=5;
+}
+
+message CompanyListRecord {
+    repeated PersonRecord list=1;
+    int32 total=2;
 }
 
 message PaymentRecord {
@@ -1358,6 +1459,26 @@ service Membership {
 	rpc SetPersonRecord(PersonRecord) returns (PersonRecord) {}
 
     rpc GetMemberRepeatSales(MemberRepeatSales) returns (MemberRepeatSales) {}
+
+	// Paginated search
+	rpc GetMembershipList(MembershipListRequest) returns (MembershipListRecord) {}
+
+	// Health records
+	rpc SetHealthObservation(HealthObservationRecord) returns (HealthObservationRecord) {}
+	rpc GetHealthObservationHistory(MembershipRecord) returns (HealthObservationList) {}
+	rpc DeleteHealthObservation(HealthObservationRecord) returns (Void) {}
+
+	rpc SetAllergyRecord(AllergyRecord) returns (AllergyRecord) {}
+	rpc GetAllergyList(MembershipRecord) returns (AllergyList) {}
+	rpc DeleteAllergyRecord(AllergyRecord) returns (Void) {}
+
+	rpc SetLongTermMedication(LongTermMedicationRecord) returns (LongTermMedicationRecord) {}
+	rpc GetLongTermMedicationList(MembershipRecord) returns (LongTermMedicationList) {}
+	rpc DeleteLongTermMedication(LongTermMedicationRecord) returns (Void) {}
+
+	rpc SetMedicalHistoryEntry(MedicalHistoryEntry) returns (MedicalHistoryEntry) {}
+	rpc GetMedicalHistoryList(MembershipRecord) returns (MedicalHistoryList) {}
+	rpc DeleteMedicalHistoryEntry(MedicalHistoryEntry) returns (Void) {}
 }
 
 service Company {
@@ -1365,6 +1486,7 @@ service Company {
 	rpc DeleteCompanyRecord(PersonRecord) returns (Void) {}
 	rpc GetCompanyRecord(PersonRecord) returns (PersonRecord) {}
 	rpc SetCompanyRecord(PersonRecord) returns (PersonRecord) {}
+	rpc GetCompanyList(CompanyListRequest) returns (CompanyListRecord) {}
 }
 
 service Report {
