@@ -124,7 +124,7 @@ message CompanyRecord {
 	double credit_limit=5;
     string purpose_of_sales=6;
     bool is_taxable=7;
-    bool can_sell_poison=8;
+    optional bool can_sell_poison=8;
 }
 
 message PersonRecord {
