@@ -1341,6 +1341,12 @@ service Sales {
     rpc Cancel_eInvoice(IDList) returns (ReturnStatus){}
     rpc Check_eInvoiceSubmission(IDList) returns (ReturnStatus){}
     rpc ShowError_eInvoice(IDRecord) returns (ReturnStatus){}
+
+    rpc Submit_Self_Billed_eInvoice(IDList) returns (ReturnStatus){}
+    rpc Cancel_Self_Billed_eInvoice(IDList) returns (ReturnStatus){}
+    rpc Check_Self_Billed_eInvoiceSubmission(IDList) returns (ReturnStatus){}
+    rpc ShowError_Self_Billed_eInvoice(IDRecord) returns (ReturnStatus){}
+
     rpc Get_eInvoicePublicId(IDRecord) returns (ReturnStatus) {}
 
 }
