@@ -877,6 +877,7 @@ message PurchaseRecord {
     string where=13;
     google.protobuf.Timestamp date_created=14;
     string supplier_sales_id=15;
+    string e_invoice_url=16;
 }
 
 message PurchaseRecordList {
