@@ -848,6 +848,9 @@ message SalesRecord {
     string customer_purchase_id=23;
     bool to_print_order=24;
     bool to_submit_e_invoice=25;
+    // When true, on-hold (suspend) records are stored without reserving stock
+    // (qohHoldOut is left untouched). Used by the PWA shopping cart sync.
+    bool skip_qoh_hold=26;
 }
 
 message SalesRecordList {
