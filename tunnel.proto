@@ -13,17 +13,38 @@ message Pong {
 
 // ── Registration ───────────────────────────────────────────────────
 
+// One outlet declared by ppServer at registration (selected by the owner in
+// the desktop Gateway Subscription dialog). Identity = uuid (availabledb.uuid);
+// master_db/trans_db are carried for gateway-side mapping to sessions.
+message OutletRef {
+    string uuid = 1;            // availabledb.uuid — stable per-outlet identity
+    string code = 2;            // outlet code (display only)
+    string master_db = 3;       // master db (relative path, display/mapping)
+    string trans_db = 4;        // transaction db (relative path, display/mapping)
+}
+
+// Per-outlet subscription state returned in the registration ack.
+message OutletSubscriptionStatus {
+    string uuid = 1;
+    string code = 2;
+    int64 expires_at = 3;       // unix epoch seconds
+    string status = 4;          // "granted" | "active" | "expired" | "unknown"
+}
+
 message RegisterRequest {
     string server_id = 1;       // persisted UUID, generated once per ppServer
-    string pairing_token = 2;   // opaque token minted by owner on the gateway
+    string pairing_token = 2;   // Firebase ID token (renewable credential) or pairing token
     string display_name = 3;    // human-readable name for the PWA
     string app_version = 4;     // ppServer version string
+    repeated OutletRef outlets = 5;  // outlets selected for gateway subscription
+    string subscriber_email = 6;  // Firebase account that subscribed (billing identity, recorded by the gateway)
 }
 
 message RegisterResponse {
     bool accepted = 1;
     string owner_email = 2;     // set when accepted
     string message = 3;         // reason when rejected
+    repeated OutletSubscriptionStatus outlet_subscriptions = 4;  // per-outlet state after processing
 }
 
 // ── Proxied RPC ────────────────────────────────────────────────────

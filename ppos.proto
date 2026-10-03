@@ -1212,6 +1212,54 @@ message eInvoicePublicId {
     string long_id=3;
 }
 
+// ── Gateway subscription (desktop client ↔ ppServer) ───────────────
+// Per-outlet subscription to the cloud gateway. The desktop "Gateway
+// Subscription" dialog collects the gateway endpoint + Firebase account,
+// optionally reuses the stored renewable credential (refresh token), and
+// picks which outlets connect.
+
+message GatewayOutletInfo {
+    string uuid = 1;            // availabledb.uuid
+    string code = 2;            // outlet code
+    string name = 3;            // outlet name
+    bool selected = 4;          // ticked in the Subscribe dialog
+    int64 expires_at = 5;       // last known subscription expiry (unix epoch, 0 = unknown)
+    string status = 6;          // "active" | "expired" | "granted" | "unknown"
+}
+
+message GatewaySettingsRecord {
+    string host = 1;            // ul_keys gateway_host (default pharmapos.com)
+    int32 port = 2;             // ul_keys gateway_port (default 33002)
+    bool insecure = 3;          // ul_keys gateway_insecure (default true)
+    string email = 4;           // ul_keys gateway_firebase_email (default for the dialog)
+    bool has_credential = 5;    // refresh token stored → password may be omitted
+    bool connected = 6;         // tunnel currently registered with the gateway
+    repeated GatewayOutletInfo outlets = 7;  // local outlets + selection + cached status
+    string google_client_id = 8; // ul_keys gateway_google_oauth_client_id (desktop OAuth client)
+}
+
+message GatewaySubscribeRequest {
+    string session_key = 1;
+    string host = 2;
+    int32 port = 3;
+    bool insecure = 4;
+    string email = 5;           // Firebase account
+    string password = 6;        // empty = reuse stored credential (email must match)
+    repeated string outlet_uuids = 7;  // selected outlets (≥ 1)
+    string auth_provider = 8;   // "" | "password" | "google"
+    string google_auth_code = 9;      // Google OAuth authorization code (PKCE, one-time)
+    string google_code_verifier = 10; // PKCE code verifier for the code above
+    string google_redirect_uri = 11;  // loopback redirect URI used for the code
+}
+
+message GatewaySubscribeResult {
+    bool success = 1;           // credential + selection saved
+    string message = 2;         // human-readable result
+    string email = 3;           // authenticated email
+    bool connected = 4;         // tunnel registered within the wait window
+    repeated GatewayOutletInfo outlets = 5;  // per-outlet expiry/status after subscribe
+}
+
 service Chat {
 	rpc StartChat(LoginSessionRecord) returns (stream ServerEventMessage) {}
 }
@@ -1230,6 +1278,8 @@ service Auth {
 	rpc ValidateUser(UserRecord) returns (ReturnStatus) {}
 	rpc ValidateUserEmail(UserRecord) returns (ReturnStatus) {}
     rpc GetLoginSessionRecordList(LoginSessionRecord) returns (LoginSessionRecordList) {}
+    rpc GetGatewaySettings(Void) returns (GatewaySettingsRecord) {}
+    rpc SubscribeGateway(GatewaySubscribeRequest) returns (GatewaySubscribeResult) {}
 }
 
 service Config {
