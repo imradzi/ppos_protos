@@ -77,6 +77,30 @@ message RpcResponse {
     bytes payload = 5;                  // serialized response protobuf (or accumulated stream)
 }
 
+// ── Unsolicited server events (ppServer → gateway) ─────────────────
+
+// One message record of a ServerEventMessage broadcast (desktop event stream).
+message ServerEventRecord {
+    int32  type           = 1;  // ServerEventMessage::EventType (stock, membership, company, ...)
+    string code           = 2;  // operation: "updated", "deleted", "sold", "updated-list", ...
+    string key            = 3;  // meaning of value: "id", "date", "session-id", ...
+    string value          = 4;  // record id / epoch date / ... (plain string, same as desktop)
+    int32  broadcast_type = 5;  // 0=ToAll, 1=ToCompany, 2=ToOutlet, 3=ToOwnerOnly
+}
+
+// ppServer → Gateway: a batch of data-change notifications for PWA fan-out.
+// Mirrors the desktop ServerManager::SendMessage scope semantics:
+//   ToAll        → every subscriber of this server
+//   ToCompany    → subscribers with same master db (suffix match on db_name)
+//   ToOutlet     → subscribers with same master + transaction db
+//   ToOwnerOnly  → subscriber whose email == origin_email
+message ServerEventPush {
+    repeated ServerEventRecord messages = 1;
+    string db_name          = 2;  // origin session master db (relative path)
+    string transaction_name = 3;  // origin session transaction db (relative path)
+    string origin_email     = 4;  // origin user email (for ToOwnerOnly)
+}
+
 // ── Tunnel frame ───────────────────────────────────────────────────
 
 message TunnelFrame {
@@ -88,6 +112,7 @@ message TunnelFrame {
         RpcResponse         rpc_response    = 5;
         Ping                ping            = 6;
         Pong                pong            = 7;
+        ServerEventPush     server_event    = 8;  // unsolicited; newer ppServer only
     }
 }
 
