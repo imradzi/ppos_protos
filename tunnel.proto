@@ -36,8 +36,9 @@ message RegisterRequest {
     string pairing_token = 2;   // Firebase ID token (renewable credential) or pairing token
     string display_name = 3;    // human-readable name for the PWA
     string app_version = 4;     // ppServer version string
-    repeated OutletRef outlets = 5;  // outlets selected for gateway subscription
+    repeated OutletRef outlets = 5;  // outlets to declare when update_declared_outlets=true
     string subscriber_email = 6;  // Firebase account that subscribed (billing identity, recorded by the gateway)
+    bool update_declared_outlets = 7;  // true = this registration replaces the declared set; false = keep current
 }
 
 message RegisterResponse {
