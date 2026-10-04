@@ -1284,6 +1284,7 @@ service Auth {
 
 service Config {
 	rpc GetServerKey(Void) returns (ServerKeyRecord) {} // in session_id output ServerKeyRecord
+	rpc GetServerInfo(Void) returns (ServerInfoRecord) {} // TLS transport info; no session required
 	rpc SetServerKey(ServerKeyRecord) returns (ReturnStatus) {} // input session_id and serialized ServerKeyRecord output status
 	rpc GetServerDate(Void) returns (ReturnDate) {}
 
@@ -1738,6 +1739,18 @@ message ChatSessionList {
 message ChatSessionListRequest {
     wpObject base = 1;
     string window_name = 2;          // filter by window (empty = all)
+}
+
+// Server transport/security info — lets clients discover and verify the
+// secure (TLS) gRPC listener before any session exists. Public info only:
+// the certificate is the server's own public certificate.
+message ServerInfoRecord {
+    bool require_tls = 1;        // server has an active TLS listener; clients must use it
+    int32 tls_port = 2;          // TLS listener port
+    string tls_cert_name = 3;    // certificate CN (for the TLS target-name override)
+    string tls_cert_sha256 = 4;  // SHA-256 (hex) of the DER certificate (trust pin)
+    string tls_cert_pem = 5;     // server certificate, PEM (used to pin on first contact)
+    string server_version = 6;   // server build/version string
 }
 
 
