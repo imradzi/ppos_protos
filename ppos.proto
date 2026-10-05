@@ -1258,6 +1258,7 @@ message GatewaySubscribeResult {
     string email = 3;           // authenticated email
     bool connected = 4;         // tunnel registered within the wait window
     repeated GatewayOutletInfo outlets = 5;  // per-outlet expiry/status after subscribe
+    GatewaySettingsRecord settings = 6;      // full updated settings record (same shape as GetGatewaySettings)
 }
 
 service Chat {
