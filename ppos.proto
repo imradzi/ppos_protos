@@ -1236,6 +1236,7 @@ message GatewaySettingsRecord {
     bool connected = 6;         // tunnel currently registered with the gateway
     repeated GatewayOutletInfo outlets = 7;  // local outlets + selection + cached status
     string google_client_id = 8; // ul_keys gateway_google_oauth_client_id (desktop OAuth client)
+    bool email_verified = 9;    // stored account's email verified on Firebase (live check when a credential exists)
 }
 
 message GatewaySubscribeRequest {
@@ -1259,6 +1260,7 @@ message GatewaySubscribeResult {
     bool connected = 4;         // tunnel registered within the wait window
     repeated GatewayOutletInfo outlets = 5;  // per-outlet expiry/status after subscribe
     GatewaySettingsRecord settings = 6;      // full updated settings record (same shape as GetGatewaySettings)
+    bool verification_email_sent = 7;        // new Firebase account: verification email was requested
 }
 
 service Chat {

@@ -48,6 +48,24 @@ message RegisterResponse {
     repeated OutletSubscriptionStatus outlet_subscriptions = 4;  // per-outlet state after processing
 }
 
+// ── Subscription status query (ppServer → gateway) ─────────────────
+
+// ppServer asks the gateway for the authoritative subscription record of its
+// outlets. The gateway owns the single source of truth (gw_subscriptions);
+// ppServer and ppClient never cache or persist subscription state — every
+// client request is answered by a live query to the gateway.
+message SubscriptionQuery {
+    string request_id = 1;      // correlates request ↔ response
+    string server_id = 2;       // ppServer identity (informational)
+}
+
+message SubscriptionQueryResponse {
+    string request_id = 1;
+    bool ok = 2;
+    string error_message = 3;   // set when ok == false
+    repeated OutletSubscriptionStatus subscriptions = 4;  // declared (selected) outlets only
+}
+
 // ── Proxied RPC ────────────────────────────────────────────────────
 
 message MetadataEntry {
@@ -113,6 +131,8 @@ message TunnelFrame {
         Ping                ping            = 6;
         Pong                pong            = 7;
         ServerEventPush     server_event    = 8;  // unsolicited; newer ppServer only
+        SubscriptionQuery           subscription_query          = 9;   // ppServer → gateway (live record)
+        SubscriptionQueryResponse   subscription_query_response = 10;  // gateway → ppServer
     }
 }
 
