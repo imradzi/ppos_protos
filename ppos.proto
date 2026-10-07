@@ -1317,6 +1317,12 @@ service Config {
 	rpc GetOutletHTMLPage(OutletHTMLPageRequest) returns (OutletHTMLPageRecord) {}
 	rpc SetOutletHTMLPage(OutletHTMLPageUploadRequest) returns (OutletHTMLPageRecord) {}
 
+	// Mall online-payment settings (toyyibPay merchant account for this
+	// outlet/company, stored in the master db registry). Secret is never
+	// returned; send a non-empty secret_key on Set to rotate it.
+	rpc GetMallPaymentSettings(Void) returns (MallPaymentSettings) {}
+	rpc SetMallPaymentSettings(MallPaymentSettings) returns (ReturnStatus) {}
+
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
@@ -1403,6 +1409,16 @@ service Sales {
     rpc ShowError_Self_Billed_eInvoice(IDRecord) returns (ReturnStatus){}
 
     rpc Get_eInvoicePublicId(IDRecord) returns (ReturnStatus) {}
+
+    // ── Mall online orders & payments ───────────────────────────────────
+    // Complete a SalesOrder placed from the mall: saves a real Sale with
+    // the supplied payment(s) (deducts stock, loyalty points, optional
+    // e-invoice) and deletes the order.
+    rpc CompleteSalesOrder(MallOrderCompletion) returns (SalesRecord) {}
+    // toyyibPay bill creation using the outlet's configured merchant
+    // account (master-db registry: mall_toyyibpay_*).
+    rpc CreateMallPaymentBill(MallBillRequest) returns (MallBillResult) {}
+    rpc RequeryMallPaymentBill(MallBillRequery) returns (MallBillResult) {}
 
 }
 
@@ -1503,6 +1519,16 @@ service Stock {
     // Search stock list with images, prices, and quantity balance
     rpc GetSearchStockList(StringData) returns (StockSearchResultList) {}
 
+    // ── Mall publishing (mall.pharmapos.com) ────────────────────────────
+    // Per-outlet listing of stock items on the public web mall, for a
+    // limited duration. Listings live in the outlet's transaction db.
+    rpc SetMallListing(MallListingRecord) returns (ReturnStatus) {}
+    rpc DeleteMallListing(StringData) returns (ReturnStatus) {}
+    rpc GetMallListing(StringData) returns (MallListingRecord) {}
+    rpc GetAllMallListings(Void) returns (MallServerCatalog) {}          // every outlet of this server (gateway sync)
+    rpc GetMallCatalogItems(MallCatalogRequest) returns (MallCatalogItemList) {}  // authoritative read for checkout
+    rpc GetMallScanItem(StringData) returns (MallCatalogItem) {}         // barcode -> item (in-store scanning)
+
 }
 
 service Membership {
@@ -1521,6 +1547,10 @@ service Membership {
 	rpc SetPersonRecord(PersonRecord) returns (PersonRecord) {}
 
     rpc GetMemberRepeatSales(MemberRepeatSales) returns (MemberRepeatSales) {}
+
+    // Mall: ensure a membership record exists for a shopper email
+    // (creates a minimal member when missing). Idempotent.
+    rpc EnsureMallMember(MallMemberRequest) returns (MembershipRecord) {}
 
 	// Paginated search
 	rpc GetMembershipList(MembershipListRequest) returns (MembershipListRecord) {}
@@ -1964,4 +1994,123 @@ message ServerKeyRecord {
     string e_invoice_setting=197; // e-invoice setting
     bool enable_set_stock_active_date_from_other_outlet=198;
     bool enable_delete_stock_pack_prices_from_other_outlet=199;
+}
+
+// ── Mall (mall.pharmapos.com) ──────────────────────────────────────────
+// Outlet admins publish a selection of stock items to the public web mall
+// for a limited time. Listings live in the outlet's transaction db (per
+// outlet even when a master db is shared). Catalog items are sanitized:
+// no cost data, no poison flags beyond a purchasable hint.
+
+message MallListingRecord {
+    wpObject base = 1;
+    string stock_id = 2;
+    string pack_type_id = 3;                    // chosen selling pack (empty = default selling pack)
+    google.protobuf.Timestamp start_date = 4;   // when the listing becomes visible
+    google.protobuf.Timestamp end_date = 5;     // expiry; absent/zero = until unpublish
+    string note = 6;
+    string updated_by = 7;
+    google.protobuf.Timestamp updated_date = 8;
+}
+
+message MallListingList {
+    wpObject base = 1;
+    repeated MallListingRecord list = 2;
+}
+
+message MallCatalogRequest {
+    wpObject base = 1;
+    repeated string stock_ids = 2;
+}
+
+message MallCatalogItem {
+    string id = 1;                              // stock entity ID
+    string code = 2;
+    string name = 3;
+    string description = 4;
+    string type_name = 5;
+    double qoh = 6;
+    string qoh_string = 7;
+    string barcode = 8;                         // barcode of the listed pack
+    repeated PackingRecord pack_records = 9;    // public pack prices
+    repeated string all_image_urls = 10;        // server-side file paths (gateway converts to URLs)
+    repeated string all_thumbnail_urls = 11;
+    bool published = 12;                        // currently published+active on the mall
+    google.protobuf.Timestamp listing_end_date = 13;
+    string pack_type_id = 14;                   // listed pack (empty = default selling pack)
+    double price = 15;                          // listed pack selling price (0 when not listed)
+    bool purchasable = 16;                      // false for poison / pseudo-poison / non-stock items
+}
+
+message MallCatalogItemList {
+    wpObject base = 1;
+    repeated MallCatalogItem items = 2;
+}
+
+message MallOutletCatalog {
+    string outlet_uuid = 1;
+    string master_db = 2;
+    string trans_db = 3;
+    string code = 4;
+    string name = 5;
+    repeated MallCatalogItem items = 6;
+}
+
+message MallServerCatalog {
+    wpObject base = 1;
+    repeated MallOutletCatalog outlets = 2;
+}
+
+message MallBillRequest {
+    wpObject base = 1;
+    string order_id = 2;
+    double amount = 3;                          // in ringgit; converted to cents for toyyibPay
+    string customer_name = 4;
+    string customer_email = 5;
+    string customer_phone = 6;
+    string return_url = 7;                      // customer returns here after payment
+    string callback_url = 8;                    // server-to-server status callback (gateway)
+    string ref_no = 9;                          // external reference shown on the bill
+}
+
+message MallBillResult {
+    bool ok = 1;
+    string message = 2;
+    string bill_code = 3;
+    string payment_url = 4;
+}
+
+message MallBillRequery {
+    wpObject base = 1;
+    string bill_code = 2;
+}
+
+message MallPaymentSettings {
+    wpObject base = 1;
+    bool enabled = 2;
+    bool sandbox = 3;
+    string category_code = 4;
+    bool has_secret_key = 5;                    // secret is never returned in full
+    string secret_key = 6;                      // write-only: non-empty on set, ignored on get
+}
+
+// Complete a SalesOrder placed from the mall: saves a real Sale with a
+// payment (deducts stock, loyalty points, optional e-invoice) and deletes
+// the order. Works for pay-at-counter and pay-online orders; payment_mode
+// selects the pay-by type ("cash" | "card" | "cheque" | "online").
+message MallOrderCompletion {
+    wpObject base = 1;
+    string order_id = 2;
+    string payment_mode = 3;
+    string payment_reference = 4;   // e.g. toyyibPay bill code
+    bool to_submit_e_invoice = 5;
+}
+
+// Ensure a membership record exists for a mall shopper email (creates a
+// minimal member when missing). Response = the member record.
+message MallMemberRequest {
+    wpObject base = 1;
+    string email = 2;
+    string name = 3;
+    string phone = 4;
 }
