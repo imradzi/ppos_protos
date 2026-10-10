@@ -849,6 +849,7 @@ message SalesRecord {
     string customer_purchase_id=23;
     bool to_print_order=24;
     bool to_submit_e_invoice=25;
+    PersonRecord pharmacist=26;
 }
 
 message SalesRecordList {
@@ -879,6 +880,7 @@ message PurchaseRecord {
     google.protobuf.Timestamp date_created=14;
     string supplier_sales_id=15;
     string e_invoice_url=16;
+    PersonRecord pharmacist=17;
 }
 
 message PurchaseRecordList {
