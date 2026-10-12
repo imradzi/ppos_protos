@@ -1240,6 +1240,7 @@ message GatewaySettingsRecord {
     repeated GatewayOutletInfo outlets = 7;  // local outlets + selection + cached status
     string google_client_id = 8; // ul_keys gateway_google_oauth_client_id (desktop OAuth client)
     bool email_verified = 9;    // stored account's email verified on Firebase (live check when a credential exists)
+    string error_message = 10;  // non-empty = the read was refused; client-facing reason (e.g. missing Mobile-Admin role)
 }
 
 message GatewaySubscribeRequest {
