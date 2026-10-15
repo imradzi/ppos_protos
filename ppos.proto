@@ -1267,6 +1267,23 @@ message GatewaySubscribeResult {
     bool verification_email_sent = 7;        // new Firebase account: verification email was requested
 }
 
+// Passwordless gateway sign-in: ppServer emails a Firebase "sign in with
+// email link" one-time code. The user clicks the link; the browser lands on
+// the gateway relay page, which hands the one-time code back so ppServer can
+// exchange it for tokens (the refresh token never leaves the server, same as
+// the Google flow).
+message GatewayEmailLinkRequest {
+    string session_key = 1;
+    string email = 2;           // Firebase account to send the sign-in link to
+}
+
+message GatewayEmailLinkResult {
+    bool success = 1;           // "sent"/"waiting"/"completed" are success; terminal failures are not
+    string status = 2;          // "sent" | "waiting" | "completed" | "no_pending" | "expired" | "error"
+    string message = 3;         // human-readable detail (instructions or error)
+    string email = 4;           // authenticated email once completed
+}
+
 service Chat {
 	rpc StartChat(LoginSessionRecord) returns (stream ServerEventMessage) {}
 }
@@ -1287,6 +1304,8 @@ service Auth {
     rpc GetLoginSessionRecordList(LoginSessionRecord) returns (LoginSessionRecordList) {}
     rpc GetGatewaySettings(Void) returns (GatewaySettingsRecord) {}
     rpc SubscribeGateway(GatewaySubscribeRequest) returns (GatewaySubscribeResult) {}
+    rpc SendGatewayEmailLink(GatewayEmailLinkRequest) returns (GatewayEmailLinkResult) {}
+    rpc PollGatewayEmailLink(Void) returns (GatewayEmailLinkResult) {}
 }
 
 service Config {
