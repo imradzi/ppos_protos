@@ -915,7 +915,7 @@ message HistoricalPurchaseRecord {
     PersonRecord sales_rep=18;
     string where=19;
     google.protobuf.Timestamp date_created=20;
-
+    PersonRecord pharmacist=21;
 }
 
 message HistoricalSalesRecord {
@@ -937,6 +937,9 @@ message HistoricalSalesRecord {
     google.protobuf.Timestamp date_created=16;
     string batch_no=17;
     google.protobuf.Timestamp expiry_date=18;
+    PersonRecord pharmacist=19;
+    PersonRecord deliver_to=20;
+
 }
 
 message HistoricalStockRecordList {
