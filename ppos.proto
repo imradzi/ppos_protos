@@ -1437,9 +1437,14 @@ service Sales {
     rpc Get_eInvoicePublicId(IDRecord) returns (ReturnStatus) {}
 
     // ── Mall online orders & payments ───────────────────────────────────
-    // Complete a SalesOrder placed from the mall: saves a real Sale with
-    // the supplied payment(s) (deducts stock, loyalty points, optional
-    // e-invoice) and deletes the order.
+    // Mall orders are saved as a POS hold (SuspendedSales) so the counter
+    // staff can recall and continue them in the desktop app:
+    //   ET_Member   → Hold Sales       (sales type = CashSalesTypeID)
+    //   ET_Customer → Hold Wholesales  (sales type = CreditSalesTypeID)
+    // The shopper identity is resolved (or created) from the email.
+    rpc SaveMallHold(MallHoldRequest) returns (MallHoldResult) {}
+    // Complete a legacy SalesOrder placed from the mall before orders were
+    // saved as counter holds (kept for orders already in the queue).
     rpc CompleteSalesOrder(MallOrderCompletion) returns (SalesRecord) {}
     // toyyibPay bill creation using the outlet's configured merchant
     // account (master-db registry: mall_toyyibpay_*).
@@ -1574,9 +1579,12 @@ service Membership {
 
     rpc GetMemberRepeatSales(MemberRepeatSales) returns (MemberRepeatSales) {}
 
-    // Mall: ensure a membership record exists for a shopper email
-    // (creates a minimal member when missing). Idempotent.
-    rpc EnsureMallMember(MallMemberRequest) returns (MembershipRecord) {}
+    // Mall: resolve the shopper behind a Firebase email.
+    //   "member"   = a Membership record owns this email (ET_Member)
+    //   "customer" = a Customer/Company record owns this email (ET_Customer)
+    // An unknown email is created on the fly when shopper_type + name are
+    // supplied (the mall asks for name, company name, address, telephone).
+    rpc ResolveMallShopper(MallShopperRequest) returns (MallShopperRecord) {}
 
 	// Paginated search
 	rpc GetMembershipList(MembershipListRequest) returns (MembershipListRecord) {}
@@ -2137,11 +2145,75 @@ message MallOrderCompletion {
     bool to_submit_e_invoice = 5;
 }
 
-// Ensure a membership record exists for a mall shopper email (creates a
-// minimal member when missing). Response = the member record.
-message MallMemberRequest {
+// ── Mall shopper identity (member vs wholesale customer) ───────────────
+// A mall shopper is identified by the Firebase email they sign in with.
+// The email decides which POS hold receives the order:
+//   member   → Hold Sales       (a Membership record owns the email)
+//   customer → Hold Wholesales  (a Customer record owns the email)
+// When no record owns the email yet, the mall asks the shopper to choose
+// one and collects name, company name, address and telephone number.
+
+message MallShopperRequest {
     wpObject base = 1;
     string email = 2;
-    string name = 3;
-    string phone = 4;
+    string shopper_type = 3;    // "member" | "customer" | "" (lookup only, never create)
+    string name = 4;            // person / contact name
+    string company_name = 5;    // wholesale customer: company name (falls back to name)
+    string address = 6;
+    string phone = 7;           // stored in the entity content, PersonEntity token 4
+}
+
+message MallShopperRecord {
+    bool found = 1;             // an existing member/customer owns this email
+    bool created = 2;           // a new record was created by this call
+    string shopper_type = 3;    // "member" | "customer" | ""
+    bool is_member = 4;         // a Membership record owns this email
+    bool is_customer = 5;       // a Customer record owns this email
+    string id = 6;              // entity id of the member/customer
+    string code = 7;
+    string name = 8;            // person / contact name
+    string company_name = 9;    // wholesale customer: company name
+    string address = 10;
+    string phone = 11;
+    string email = 12;
+}
+
+// One line of a mall order sent to the counter.
+message MallHoldLine {
+    string stock_id = 1;
+    string pack_type_id = 2;    // listed selling pack (Types id)
+    double quantity = 3;
+    double price = 4;           // selling price; 0 = use the pack's current price
+}
+
+// Save a mall order as a POS hold (SuspendedSales) at the outlet.
+// The shopper details are TAB-delimited PersonEntity fields in the entityFTS
+// content (wpObject.h): 1=name, 4=telNo, 6=contact, 7=address.
+message MallHoldRequest {
+    wpObject base = 1;
+    string email = 2;           // Firebase email of the shopper
+    string shopper_type = 3;    // "member" | "customer" | "" (resolve by email)
+    string name = 4;            // new shopper, or fills a blank name
+    string company_name = 5;    // new wholesale customer only
+    string address = 6;         // fills a blank address
+    string phone = 7;           // fills a blank telNo (token 4)
+    string ref_no = 8;          // mall order reference (POS "Bill To/Ref")
+    string note = 9;            // human-readable remark shown with the hold
+    string payment_mode = 10;   // "counter" | "online" (already paid online)
+    repeated MallHoldLine items = 11;
+    bool in_store = 12;         // scan & go cart (always paid at the counter)
+}
+
+message MallHoldResult {
+    bool ok = 1;
+    string message = 2;         // reason when ok=false
+    string hold_id = 3;         // SuspendedSales id
+    string shopper_type = 4;    // resolved "member" | "customer"
+    string customer_id = 5;
+    string customer_code = 6;
+    string customer_name = 7;
+    bool created = 8;           // the member/customer record was created now
+    double total = 9;
+    bool needs_profile = 10;    // ok=false because the shopper must choose a type / fill the form
+    string customer_phone = 11; // telephone on the record (entityFTS content token 4)
 }
