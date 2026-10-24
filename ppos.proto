@@ -850,6 +850,10 @@ message SalesRecord {
     bool to_print_order=24;
     bool to_submit_e_invoice=25;
     PersonRecord pharmacist=26;
+    // Channel the transaction originated from: "web" (mall online order),
+    // "self-service" (in-store scan & go) or "desktop" (cashier POS, incl. the
+    // staff PWA). Empty on legacy rows = "desktop". Immutable after creation.
+    string origin=27;
 }
 
 message SalesRecordList {
