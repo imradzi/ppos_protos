@@ -1475,6 +1475,9 @@ service Sales {
     // account (master-db registry: mall_toyyibpay_*).
     rpc CreateMallPaymentBill(MallBillRequest) returns (MallBillResult) {}
     rpc RequeryMallPaymentBill(MallBillRequery) returns (MallBillResult) {}
+    // Follow a counter hold after the mall queue handed it to the counter:
+    // still held / recalled into a POS screen / completed with a saved sale.
+    rpc GetMallOrderStates(MallOrderStateList) returns (MallOrderStateResult) {}
 
 }
 
@@ -2231,6 +2234,10 @@ message MallHoldRequest {
     string payment_mode = 10;   // "counter" | "online" (already paid online)
     repeated MallHoldLine items = 11;
     bool in_store = 12;         // scan & go cart (always paid at the counter)
+    // Gateway mall order id. Stored as the hold's customerPurchaseId so the
+    // sale created when the cashier recalls the hold can be linked back to
+    // the mall order (desktop recall carries customerPurchaseId into the sale).
+    string customer_purchase_id = 13;
 }
 
 message MallHoldResult {
@@ -2245,4 +2252,43 @@ message MallHoldResult {
     double total = 9;
     bool needs_profile = 10;    // ok=false because the shopper must choose a type / fill the form
     string customer_phone = 11; // telephone on the record (entityFTS content token 4)
+}
+
+// ── Mall order tracking (hold recall / completion) ─────────────────────
+// A mall order lives in the POS as a counter hold. Once the cashier recalls
+// it, the hold row is deleted and the cart lives in the POS screen until the
+// sale is closed. The gateway asks the outlet which stage each order reached
+// so the "Online Mall Order" queue can follow it:
+//   held      → still waiting in Hold Sales / Hold Wholesales
+//   recalled  → hold gone, sale not saved yet (being keyed in at the counter)
+//   completed → sale saved; `paid` says whether a payment was received
+message MallOrderRef {
+    string order_id = 1;   // gateway order id (hold/sale customerPurchaseId)
+    string hold_id = 2;    // SuspendedSales id returned by SaveMallHold
+    string ref_no = 3;     // "MALL-xxxxxxxx" (hold/sale refNo; note fallback)
+    // When the mall order was created. Bounds the sales scan: a recall keeps
+    // the hold's transaction date, so the closed sale cannot predate this.
+    google.protobuf.Timestamp created_at = 4;
+}
+
+message MallOrderState {
+    string order_id = 1;
+    string state = 2;                   // "held" | "recalled" | "completed" | "gone"
+    string hold_id = 3;                 // current hold (state=held)
+    string sale_id = 4;                 // closed sale (state=completed)
+    double total = 5;                   // closed sale total
+    bool paid = 6;                      // a payment was received
+    string payment_method = 7;          // e.g. "Cash" / "Credit"
+    google.protobuf.Timestamp transaction_date = 8;  // closed sale date
+}
+
+message MallOrderStateList {
+    wpObject base = 1;
+    repeated MallOrderRef orders = 2;
+}
+
+message MallOrderStateResult {
+    bool ok = 1;
+    string message = 2;
+    repeated MallOrderState list = 3;
 }
