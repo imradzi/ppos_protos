@@ -571,10 +571,27 @@ message AvailableDB {
     string uuid=10;
     string chat_group=11;
     string owner_email=12;
+    string location=13;              // searchable area/city/state shown on the mall
+    bool has_coordinates=14;         // false = latitude/longitude unset
+    double latitude=15;
+    double longitude=16;
 }
 
 message AvailableDBList {
 	repeated AvailableDB list=1;
+}
+
+// Per-outlet location setting (GlobalData.db availabledb row). Used by the
+// staff PWA and synced to the mall through Stock/GetAllMallListings.
+message OutletLocationRecord {
+    wpObject base = 1;
+    string outlet_code = 2;          // read-only
+    string outlet_name = 3;          // read-only
+    string location = 4;             // searchable area, e.g. "Bandar Baru Bangi, Selangor"
+    bool has_coordinates = 5;
+    double latitude = 6;
+    double longitude = 7;
+    string outlet_address = 8;       // read-only hint from the master registry
 }
 enum EntityType {
     ET_User = 0;
@@ -1353,6 +1370,10 @@ service Config {
 	rpc GetMallPaymentSettings(Void) returns (MallPaymentSettings) {}
 	rpc SetMallPaymentSettings(MallPaymentSettings) returns (ReturnStatus) {}
 
+	// Per-outlet location (GlobalData.db availabledb row). Admin only.
+	rpc GetOutletLocation(OutletLocationRecord) returns (OutletLocationRecord) {}
+	rpc SetOutletLocation(OutletLocationRecord) returns (ReturnStatus) {}
+
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
@@ -2097,6 +2118,10 @@ message MallOutletCatalog {
     string code = 4;
     string name = 5;
     repeated MallCatalogItem items = 6;
+    string location = 7;
+    bool has_coordinates = 8;
+    double latitude = 9;
+    double longitude = 10;
 }
 
 message MallServerCatalog {
