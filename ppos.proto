@@ -1364,12 +1364,6 @@ service Config {
 	rpc GetOutletHTMLPage(OutletHTMLPageRequest) returns (OutletHTMLPageRecord) {}
 	rpc SetOutletHTMLPage(OutletHTMLPageUploadRequest) returns (OutletHTMLPageRecord) {}
 
-	// Mall online-payment settings (toyyibPay merchant account for this
-	// outlet/company, stored in the master db registry). Secret is never
-	// returned; send a non-empty secret_key on Set to rotate it.
-	rpc GetMallPaymentSettings(Void) returns (MallPaymentSettings) {}
-	rpc SetMallPaymentSettings(MallPaymentSettings) returns (ReturnStatus) {}
-
 	// Per-outlet location (GlobalData.db availabledb row). Admin only.
 	rpc GetOutletLocation(OutletLocationRecord) returns (OutletLocationRecord) {}
 	rpc SetOutletLocation(OutletLocationRecord) returns (ReturnStatus) {}
@@ -1471,14 +1465,27 @@ service Sales {
     // Complete a legacy SalesOrder placed from the mall before orders were
     // saved as counter holds (kept for orders already in the queue).
     rpc CompleteSalesOrder(MallOrderCompletion) returns (SalesRecord) {}
-    // toyyibPay bill creation using the outlet's configured merchant
-    // account (master-db registry: mall_toyyibpay_*).
-    rpc CreateMallPaymentBill(MallBillRequest) returns (MallBillResult) {}
-    rpc RequeryMallPaymentBill(MallBillRequery) returns (MallBillResult) {}
     // Follow a counter hold after the mall queue handed it to the counter:
     // still held / recalled into a POS screen / completed with a saved sale.
     rpc GetMallOrderStates(MallOrderStateList) returns (MallOrderStateResult) {}
 
+}
+
+// ── Online payment gateways (Billplz / ToyyibPay) ──────────────────────
+// Configuration, bill creation, callback verification, requery and the
+// per-outlet payment ledger. Credentials live in the outlet transaction db;
+// ppGateway is only a public relay for callbacks and order display.
+service Payment {
+    rpc GetGatewaySettings(Void) returns (PaymentGatewaySettings) {}
+    rpc SetGatewaySettings(PaymentGatewaySettings) returns (ReturnStatus) {}
+    rpc TestGateway(PaymentGatewayTestRequest) returns (PaymentGatewayTestResult) {}
+    rpc CreatePayment(PaymentCreateRequest) returns (PaymentCreateResult) {}
+    rpc RequeryPayment(PaymentRequeryRequest) returns (GatewayPaymentRecord) {}
+    rpc CancelPayment(PaymentCancelRequest) returns (ReturnStatus) {}
+    rpc ProcessCallback(PaymentCallbackRequest) returns (PaymentCallbackResult) {}
+    rpc ReconcilePending(Void) returns (PaymentReconcileResult) {}
+    rpc ListPayments(PaymentListRequest) returns (PaymentRecordList) {}
+    rpc LinkSale(PaymentLinkSaleRequest) returns (ReturnStatus) {}
 }
 
 service Purchases {
@@ -2132,37 +2139,161 @@ message MallServerCatalog {
     repeated MallOutletCatalog outlets = 2;
 }
 
-message MallBillRequest {
-    wpObject base = 1;
-    string order_id = 2;
-    double amount = 3;                          // in ringgit; converted to cents for toyyibPay
-    string customer_name = 4;
-    string customer_email = 5;
-    string customer_phone = 6;
-    string return_url = 7;                      // customer returns here after payment
-    string callback_url = 8;                    // server-to-server status callback (gateway)
-    string ref_no = 9;                          // external reference shown on the bill
+// ── Online payment gateway messages ────────────────────────────────────
+// Money is always in integer cents (MYR). The outlet defines a per-gateway
+// fee rule; the bearer mode decides whether the fee is added to the bill,
+// treated as embedded in the price, or booked as an outlet expense.
+message PaymentFeeRule {
+    string mode = 1;            // "included" | "customer" | "outlet"
+    double percent = 2;         // e.g. 2.0 = 2%
+    int64 fixed_cents = 3;      // e.g. 50 = RM0.50
+    int64 min_cents = 4;        // 0 = no minimum
+    int64 max_cents = 5;        // 0 = no cap
 }
 
-message MallBillResult {
+message PaymentGatewayConfig {
+    string provider = 1;        // "billplz" | "toyyibpay"
+    bool enabled = 2;           // only one provider may be enabled
+    bool sandbox = 3;
+    string collection_id = 4;   // Billplz
+    string category_code = 5;   // ToyyibPay
+    bool has_secret_key = 6;
+    string secret_key = 7;      // write-only
+    bool has_signature_key = 8; // Billplz X Signature key
+    string signature_key = 9;   // write-only
+    PaymentFeeRule fee = 10;
+    bool configured = 11;       // all required fields present
+    bool last_test_ok = 12;
+    string last_test_message = 13;
+    google.protobuf.Timestamp last_tested_at = 14;
+}
+
+message PaymentGatewaySettings {
+    wpObject base = 1;
+    string active_provider = 2;                 // "" when online payment is disabled
+    repeated PaymentGatewayConfig providers = 3;
+}
+
+message PaymentGatewayTestRequest {
+    wpObject base = 1;
+    PaymentGatewayConfig config = 2;
+}
+
+message PaymentGatewayTestResult {
     bool ok = 1;
     string message = 2;
-    string bill_code = 3;
-    string payment_url = 4;
+    string provider = 3;
 }
 
-message MallBillRequery {
+message PaymentCreateRequest {
     wpObject base = 1;
-    string bill_code = 2;
+    string order_id = 2;                        // gateway mall order id
+    string order_ref = 3;                       // "MALL-..." reference shown to the shopper
+    int64 order_amount_cents = 4;               // base order total, before any fee
+    string customer_name = 5;
+    string customer_email = 6;
+    string customer_phone = 7;
+    string return_url = 8;                      // customer returns here after payment
+    string callback_url = 9;                    // provider server-to-server callback (gateway)
+    string description = 10;
 }
 
-message MallPaymentSettings {
-    wpObject base = 1;
-    bool enabled = 2;
+message GatewayPaymentRecord {
+    string id = 1;
+    string provider = 2;
     bool sandbox = 3;
-    string category_code = 4;
-    bool has_secret_key = 5;                    // secret is never returned in full
-    string secret_key = 6;                      // write-only: non-empty on set, ignored on get
+    string order_id = 4;
+    string order_ref = 5;
+    string provider_bill_id = 6;                // Billplz bill id / ToyyibPay billcode
+    string provider_transaction_id = 7;         // Billplz transaction_id / ToyyibPay refno/invoice
+    string status = 8;                          // created|submitted|pending|paid|settled|failed|expired|cancelled|refunded
+    string status_reason = 9;
+    int64 order_amount_cents = 10;
+    int64 fee_cents = 11;
+    int64 customer_amount_cents = 12;           // amount sent to the provider
+    int64 provider_fee_cents = 13;              // actual provider charge when reported
+    int64 net_amount_cents = 14;                // customer amount minus provider fee when known
+    string fee_mode = 15;
+    double fee_percent = 16;
+    int64 fee_fixed_cents = 17;
+    int64 fee_min_cents = 18;
+    int64 fee_max_cents = 19;
+    string payment_url = 20;
+    string payment_channel = 21;
+    string settlement_status = 22;              // unknown|pending|settled|not_reported
+    string settlement_ref = 23;
+    google.protobuf.Timestamp submitted_at = 24;
+    google.protobuf.Timestamp paid_at = 25;
+    google.protobuf.Timestamp settled_at = 26;
+    google.protobuf.Timestamp expires_at = 27;
+    google.protobuf.Timestamp last_checked_at = 28;
+    string customer_name = 29;
+    string customer_email = 30;
+    string customer_phone = 31;
+    string currency = 32;
+    string sale_id = 33;
+    string created_by = 34;
+    google.protobuf.Timestamp created_at = 35;
+    google.protobuf.Timestamp updated_at = 36;
+}
+
+message PaymentCreateResult {
+    bool ok = 1;
+    string message = 2;
+    GatewayPaymentRecord payment = 3;
+}
+
+message PaymentRequeryRequest {
+    wpObject base = 1;
+    string payment_id = 2;
+    string provider_bill_id = 3;
+}
+
+message PaymentCancelRequest {
+    wpObject base = 1;
+    string payment_id = 2;
+    string reason = 3;
+}
+
+message PaymentCallbackRequest {
+    wpObject base = 1;
+    string provider = 2;
+    string content_type = 3;
+    bytes body = 4;
+}
+
+message PaymentCallbackResult {
+    bool ok = 1;
+    bool verified = 2;
+    string message = 3;
+    GatewayPaymentRecord payment = 4;
+}
+
+message PaymentReconcileResult {
+    bool ok = 1;
+    string message = 2;
+    repeated GatewayPaymentRecord updated = 3;
+    int32 checked = 4;
+}
+
+message PaymentListRequest {
+    wpObject base = 1;
+    string status = 2;
+    string provider = 3;
+    string from = 4;                            // YYYY-MM-DD (inclusive)
+    string to = 5;                              // YYYY-MM-DD (inclusive)
+    int32 limit = 6;
+}
+
+message PaymentRecordList {
+    repeated GatewayPaymentRecord list = 1;
+}
+
+message PaymentLinkSaleRequest {
+    wpObject base = 1;
+    string payment_id = 2;
+    string order_id = 3;
+    string sale_id = 4;
 }
 
 // Complete a SalesOrder placed from the mall: saves a real Sale with a
