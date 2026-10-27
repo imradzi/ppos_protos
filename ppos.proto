@@ -2345,6 +2345,7 @@ message MallOrderCompletion {
     string payment_mode = 3;
     string payment_reference = 4;   // e.g. toyyibPay bill code
     bool to_submit_e_invoice = 5;
+    string payment_provider = 6;    // "billplz" | "toyyibpay" | "" (legacy)
 }
 
 // Turn a mall counter hold into the real sale after the online payment is
