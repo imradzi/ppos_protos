@@ -2092,6 +2092,7 @@ message MallListingRecord {
     string note = 6;
     string updated_by = 7;
     google.protobuf.Timestamp updated_date = 8;
+    repeated string category_ids = 9;           // gateway taxonomy subcategory ids (>=1)
 }
 
 message MallListingList {
@@ -2121,6 +2122,7 @@ message MallCatalogItem {
     string pack_type_id = 14;                   // listed pack (empty = default selling pack)
     double price = 15;                          // listed pack selling price (0 when not listed)
     bool purchasable = 16;                      // false for poison / pseudo-poison / non-stock items
+    repeated string category_ids = 17;           // gateway taxonomy subcategory ids
 }
 
 message MallCatalogItemList {
