@@ -1164,6 +1164,36 @@ message CashOutRecord {
     google.protobuf.Timestamp transaction_date=5;
 }
 
+// One invoice allocation inside a customer receipt / supplier payment.
+message PaymentAllocationRecord {
+    string invoice_id = 1;   // salesID (customer receipt) or receiveID (supplier payment)
+    double amount = 2;
+    string remark = 3;
+}
+
+// Record a receipt from a customer (or a payment to a supplier) against one or
+// more outstanding invoices. The server writes the operational payment row
+// (PaymentReceived / PaymentMade) AND the double-entry journal in one
+// transaction; JournalHeader.source marks it as PWA-originated so ageing
+// counts it only once.
+message RecordPartyPaymentRequest {
+    wpObject base = 1;
+    string party_id = 2;             // customer or supplier entity id
+    string paid_by_type_id = 3;      // Types id under CaraBayarGroupID
+    google.protobuf.Timestamp transaction_date = 4;
+    string reference = 5;
+    string remark = 6;
+    repeated PaymentAllocationRecord allocations = 7;
+}
+
+message RecordPartyPaymentResult {
+    bool ok = 1;
+    string message = 2;
+    string journal_id = 3;
+    double total_amount = 4;
+    double outstanding = 5;          // party outstanding after posting
+}
+
 message StockCategoryRecord {
     wpObject base=1;
     string id=2;
@@ -1679,6 +1709,10 @@ service Accounting {
 	rpc DeleteAccountingRecords(AccountTransactionRecord) returns (AccountTransactionRecord) {}
 
 	rpc SaveCashOut(CashOutRecord) returns (ReturnStatus) {}
+
+	// PWA accounting: post a customer receipt / supplier payment.
+	rpc RecordCustomerReceipt(RecordPartyPaymentRequest) returns (RecordPartyPaymentResult) {}
+	rpc RecordSupplierPayment(RecordPartyPaymentRequest) returns (RecordPartyPaymentResult) {}
 
 }
 
