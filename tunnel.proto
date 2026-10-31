@@ -28,7 +28,8 @@ message OutletSubscriptionStatus {
     string uuid = 1;
     string code = 2;
     int64 expires_at = 3;       // unix epoch seconds
-    string status = 4;          // "granted" | "active" | "expired" | "unknown"
+    string status = 4;          // "granted" | "active" | "expired" | "conflict" | "unknown"
+    string message = 5;         // client-facing reason (e.g. the outlet code is taken)
 }
 
 message RegisterRequest {
@@ -39,6 +40,9 @@ message RegisterRequest {
     repeated OutletRef outlets = 5;  // outlets to declare when update_declared_outlets=true
     string subscriber_email = 6;  // Firebase account that subscribed (billing identity, recorded by the gateway)
     bool update_declared_outlets = 7;  // true = this registration replaces the declared set; false = keep current
+    string group_key = 8;       // outlet group key: chatGroup → fallback groupFilter
+    string endpoint_id = 9;     // tunnel endpoint id ("primary", "umbrella", ...)
+    string endpoint_kind = 10;  // "primary" | "aggregator"
 }
 
 message RegisterResponse {

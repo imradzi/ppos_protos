@@ -1281,20 +1281,39 @@ message GatewayOutletInfo {
     string name = 3;            // outlet name
     bool selected = 4;          // ticked in the Subscribe dialog
     int64 expires_at = 5;       // last known subscription expiry (unix epoch, 0 = unknown)
-    string status = 6;          // "active" | "expired" | "granted" | "unknown"
+    string status = 6;          // "active" | "expired" | "granted" | "conflict" | "unknown"
+    string message = 7;         // client-facing reason when status == "conflict"
+}
+
+// One gateway endpoint this ppServer can tunnel into. The implicit "primary"
+// endpoint keeps the legacy gateway_host/gateway_port + gateway.<group>.* keys;
+// extra endpoints (e.g. the umbrella aggregator) live in gatewayep.<id>.*.
+message GatewayEndpointInfo {
+    string id = 1;              // "primary" | "umbrella" | ...
+    string label = 2;           // display name for the dialog
+    string host = 3;
+    int32 port = 4;
+    string kind = 5;            // "primary" | "aggregator"
+    bool connected = 6;         // tunnel currently registered
+    bool has_credential = 7;    // refresh token available (endpoint or group)
+    bool enabled = 8;           // endpoint-level and per-group enable switches
+    repeated GatewayOutletInfo outlets = 9;  // per-endpoint selection/status
 }
 
 message GatewaySettingsRecord {
+    // Legacy top-level fields mirror the PRIMARY endpoint for older clients.
     string host = 1;            // ul_keys gateway_host (default pharmapos.com)
     int32 port = 2;             // ul_keys gateway_port (default 33002)
     bool insecure = 3;          // ul_keys gateway_insecure (default true)
     string email = 4;           // ul_keys gateway_firebase_email (default for the dialog)
     bool has_credential = 5;    // refresh token stored → password may be omitted
     bool connected = 6;         // tunnel currently registered with the gateway
-    repeated GatewayOutletInfo outlets = 7;  // local outlets + selection + cached status
+    repeated GatewayOutletInfo outlets = 7;  // primary endpoint: outlets + selection + status
     string google_client_id = 8; // ul_keys gateway_google_oauth_client_id (desktop OAuth client)
     bool email_verified = 9;    // stored account's email verified on Firebase (live check when a credential exists)
     string error_message = 10;  // non-empty = the read was refused; client-facing reason (e.g. missing Mobile-Admin role)
+    repeated GatewayEndpointInfo endpoints = 11;  // primary + configured extra endpoints
+    string endpoint_id = 12;    // endpoint the dialog should select (default "primary")
 }
 
 message GatewaySubscribeRequest {
@@ -1309,6 +1328,20 @@ message GatewaySubscribeRequest {
     string google_auth_code = 9;      // Google OAuth authorization code (PKCE, one-time)
     string google_code_verifier = 10; // PKCE code verifier for the code above
     string google_redirect_uri = 11;  // loopback redirect URI used for the code
+    string endpoint_id = 12;          // "" = primary; else an extra gatewayep.<id> endpoint
+}
+
+// Add/update/remove an extra gateway endpoint (admin only). The implicit
+// "primary" endpoint cannot be changed here — it keeps gateway_host/port.
+message GatewayEndpointRequest {
+    string session_key = 1;
+    string endpoint_id = 2;     // must not be "primary"
+    string label = 3;
+    string host = 4;
+    int32 port = 5;
+    string kind = 6;            // "aggregator" (default) | "primary"
+    bool enabled = 7;
+    bool remove = 8;            // remove the endpoint from gateway_endpoints
 }
 
 message GatewaySubscribeResult {
@@ -1358,6 +1391,8 @@ service Auth {
     rpc GetLoginSessionRecordList(LoginSessionRecord) returns (LoginSessionRecordList) {}
     rpc GetGatewaySettings(Void) returns (GatewaySettingsRecord) {}
     rpc SubscribeGateway(GatewaySubscribeRequest) returns (GatewaySubscribeResult) {}
+    // Add/update/remove an extra gateway endpoint (admin only).
+    rpc SetGatewayEndpoint(GatewayEndpointRequest) returns (ReturnStatus) {}
     rpc SendGatewayEmailLink(GatewayEmailLinkRequest) returns (GatewayEmailLinkResult) {}
     rpc PollGatewayEmailLink(Void) returns (GatewayEmailLinkResult) {}
 }
@@ -1503,6 +1538,16 @@ service Sales {
     // Follow a counter hold after the mall queue handed it to the counter:
     // still held / recalled into a POS screen / completed with a saved sale.
     rpc GetMallOrderStates(MallOrderStateList) returns (MallOrderStateResult) {}
+
+    // ── Mall orders at the outlet (single source of truth) ──
+    // The outlet stores the order AND creates the counter hold in one call;
+    // the gateway keeps only an outbox/journal so an order survives a lost
+    // gateway. Idempotent by order id (a replayed order returns the stored
+    // one and never creates a second hold).
+    rpc PlaceMallOrder(MallOrderPlaceRequest) returns (MallOrderPlaceResult) {}
+    rpc GetMallOrder(MallOrderGetRequest) returns (MallOrderGetResult) {}
+    rpc ListMallOrders(MallOrderFilter) returns (MallOrderList) {}
+    rpc UpdateMallOrderState(MallOrderStateUpdate) returns (ReturnStatus) {}
 
 }
 
@@ -2511,4 +2556,86 @@ message MallOrderStateResult {
     bool ok = 1;
     string message = 2;
     repeated MallOrderState list = 3;
+}
+
+// ── Mall orders stored at the outlet (Phase 4) ─────────────────────────
+// The gateway keeps only an outbox/journal; the order itself lives at the
+// outlet, so order history survives losing (or moving) a gateway.
+//   status: placed | awaiting_payment | paid | completed | cancelled |
+//           rejected
+// The outlet creates the counter hold in the same call, so a "placed"
+// order always has a hold the cashier can recall.
+message MallOrderRecord {
+    string id = 1;                  // gateway order id "<outlet_uuid>:<ulid>"
+    string ref_no = 2;              // "MALL-xxxxxxxx" (hold/sale refNo)
+    string email = 3;               // shopper (Firebase account)
+    string name = 4;
+    string phone = 5;
+    string company_name = 6;
+    string address = 7;
+    string shopper_type = 8;        // "member" | "customer"
+    double total = 9;
+    string payment_mode = 10;       // "counter" | "online"
+    string status = 11;
+    string hold_id = 12;            // SuspendedSales id
+    string sale_id = 13;            // Sales id once completed
+    string payment_id = 14;         // outlet payment gateway id
+    string payment_provider = 15;   // "billplz" | "toyyibpay"
+    string payment_status = 16;
+    string payment_reference = 17;  // provider bill code
+    string items_json = 18;         // ordered lines (audit/replay)
+    string origin_host = 19;        // mall host the order came from (return URLs)
+    google.protobuf.Timestamp created_at = 20;
+    google.protobuf.Timestamp updated_at = 21;
+    google.protobuf.Timestamp paid_at = 22;
+    google.protobuf.Timestamp cancelled_at = 23;
+    string message = 24;            // rejection reason / last note
+}
+
+// Place a mall order at the outlet: validates the lines, saves the counter
+// hold and stores the order in one go.
+message MallOrderPlaceRequest {
+    wpObject base = 1;
+    MallOrderRecord order = 2;      // id, shopper, payment mode, origin host (status is set by the outlet)
+    repeated MallHoldLine items = 3;
+    string ref_no = 4;              // POS "Bill To/Ref" (falls back to order.ref_no)
+    string note = 5;                // remark shown with the hold
+}
+
+message MallOrderPlaceResult {
+    bool ok = 1;
+    string message = 2;             // reason when ok=false
+    bool needs_profile = 3;         // shopper must choose member/customer or fill the form
+    MallOrderRecord order = 4;      // stored record (hold_id / total / status)
+}
+
+message MallOrderGetRequest {
+    wpObject base = 1;
+    string order_id = 2;
+}
+
+message MallOrderGetResult {
+    bool ok = 1;
+    string message = 2;
+    MallOrderRecord order = 3;
+}
+
+message MallOrderFilter {
+    wpObject base = 1;
+    string email = 2;               // shopper email ("" = any)
+    string status = 3;              // "" = any (comma list allowed)
+    google.protobuf.Timestamp since = 4;
+    int32 limit = 5;                // 0 = 50, max 200
+}
+
+message MallOrderList {
+    bool ok = 1;
+    string message = 2;
+    repeated MallOrderRecord orders = 3;
+}
+
+// Gateway -> outlet state change (payment confirmed, cancelled, rejected).
+message MallOrderStateUpdate {
+    wpObject base = 1;
+    MallOrderRecord order = 2;      // id + the fields to change
 }
