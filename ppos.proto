@@ -1354,6 +1354,17 @@ message GatewaySubscribeResult {
     bool verification_email_sent = 7;        // new Firebase account: verification email was requested
 }
 
+// Cancel the subscription of this server's outlets on one gateway endpoint.
+// The gateway is told to stop serving them (its declared set is cleared) and
+// ppServer stops re-declaring them, even when the gateway is unreachable at the
+// time (the next registration clears them). The saved sign-in is kept unless
+// `delete_host` is set.
+message GatewayUnsubscribeRequest {
+    string session_key = 1;
+    string endpoint_id = 2;     // "" = primary; else an extra gatewayep.<id> endpoint
+    bool delete_host = 3;       // also delete the host/port + saved sign-in of the endpoint
+}
+
 // Passwordless gateway sign-in: ppServer emails a Firebase "sign in with
 // email link" one-time code. The user clicks the link; the browser lands on
 // the gateway relay page, which hands the one-time code back so ppServer can
@@ -1391,6 +1402,8 @@ service Auth {
     rpc GetLoginSessionRecordList(LoginSessionRecord) returns (LoginSessionRecordList) {}
     rpc GetGatewaySettings(Void) returns (GatewaySettingsRecord) {}
     rpc SubscribeGateway(GatewaySubscribeRequest) returns (GatewaySubscribeResult) {}
+    // Cancel the subscription (optionally deleting the stored gateway host).
+    rpc UnsubscribeGateway(GatewayUnsubscribeRequest) returns (GatewaySubscribeResult) {}
     // Add/update/remove an extra gateway endpoint (admin only).
     rpc SetGatewayEndpoint(GatewayEndpointRequest) returns (ReturnStatus) {}
     rpc SendGatewayEmailLink(GatewayEmailLinkRequest) returns (GatewayEmailLinkResult) {}

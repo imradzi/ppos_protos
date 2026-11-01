@@ -43,6 +43,8 @@ message RegisterRequest {
     string group_key = 8;       // outlet group key: chatGroup → fallback groupFilter
     string endpoint_id = 9;     // tunnel endpoint id ("primary", "umbrella", ...)
     string endpoint_kind = 10;  // "primary" | "aggregator"
+    bool clear_declared_outlets = 11;  // true = the owner unsubscribed: clear this
+                                       // server's declared set before applying outlets
 }
 
 message RegisterResponse {
@@ -68,6 +70,25 @@ message SubscriptionQueryResponse {
     bool ok = 2;
     string error_message = 3;   // set when ok == false
     repeated OutletSubscriptionStatus subscriptions = 4;  // declared (selected) outlets only
+}
+
+// ── Unsubscribe (ppServer → gateway) ───────────────────────────────
+
+// The owner unsubscribed in the desktop Gateway Subscription dialog: the
+// gateway clears the declared flag of every row of this server, so none of its
+// outlets is served any more (storefront/mall routes stop resolving them).
+// The rows are kept — expiry and billing history survive, so re-subscribing
+// does not grant a fresh free period.
+message UnsubscribeRequest {
+    string request_id = 1;      // correlates request ↔ response
+    string server_id = 2;       // ppServer identity whose rows are cleared
+}
+
+message UnsubscribeResponse {
+    string request_id = 1;
+    bool ok = 2;
+    string error_message = 3;   // set when ok == false
+    int32 outlets_cleared = 4;  // number of outlets that were declared
 }
 
 // ── Proxied RPC ────────────────────────────────────────────────────
@@ -137,6 +158,8 @@ message TunnelFrame {
         ServerEventPush     server_event    = 8;  // unsolicited; newer ppServer only
         SubscriptionQuery           subscription_query          = 9;   // ppServer → gateway (live record)
         SubscriptionQueryResponse   subscription_query_response = 10;  // gateway → ppServer
+        UnsubscribeRequest          unsubscribe                 = 11;  // ppServer → gateway (clear declared set)
+        UnsubscribeResponse         unsubscribe_response        = 12;  // gateway → ppServer
     }
 }
 
