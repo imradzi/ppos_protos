@@ -605,6 +605,10 @@ enum EntityType {
     ET_Unanymous = 8;
     ET_Admin = 9;
     ET_Pharmacist = 10;
+    // Staff role `Mobile-Notify`: receives push notifications for operational
+    // events (low stock, new mall order, below-cost pricing, backdated cash
+    // sales). Appended — never renumber the values above.
+    ET_Notify = 11;
 }
 message GetAccessibleDBRequest {
     string email = 1;

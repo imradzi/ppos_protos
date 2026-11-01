@@ -144,6 +144,30 @@ message ServerEventPush {
     string origin_email     = 4;  // origin user email (for ToOwnerOnly)
 }
 
+// ── Push notifications (ppServer → gateway) ────────────────────────
+
+// One ready-to-send push notification. ppServer owns the business rules and
+// resolves the recipients itself (staff holding the `Mobile-Notify` role, and
+// the suppliers/sales reps linked to a low-stock item); the gateway only
+// delivers them through FCM and throttles duplicates.
+message NotifyMessage {
+    string kind             = 1;  // "low_stock" | "mall_order" | "below_cost_sale" | "backdated_cash_sale"
+    string title            = 2;
+    string body             = 3;
+    repeated string emails  = 4;  // explicit recipients; empty = nothing to send
+    string store_code       = 5;  // outlet code (PWA deep link)
+    string store_uuid       = 6;  // availabledb.uuid (stable outlet identity)
+    string db_name          = 7;  // origin master db (relative path)
+    string transaction_name = 8;  // origin transaction db (relative path)
+    string ref_id           = 9;  // stock id / sale id / mall order id
+    map<string, string> data = 10; // extra FCM data keys (url, ...)
+}
+
+// ppServer → Gateway: a batch of push notifications.
+message NotificationPush {
+    repeated NotifyMessage notifications = 1;
+}
+
 // ── Tunnel frame ───────────────────────────────────────────────────
 
 message TunnelFrame {
@@ -160,6 +184,7 @@ message TunnelFrame {
         SubscriptionQueryResponse   subscription_query_response = 10;  // gateway → ppServer
         UnsubscribeRequest          unsubscribe                 = 11;  // ppServer → gateway (clear declared set)
         UnsubscribeResponse         unsubscribe_response        = 12;  // gateway → ppServer
+        NotificationPush            notification                = 13;  // ppServer → gateway (FCM fan-out)
     }
 }
 
