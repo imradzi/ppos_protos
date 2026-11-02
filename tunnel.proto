@@ -26,10 +26,14 @@ message OutletRef {
 // Per-outlet subscription state returned in the registration ack.
 message OutletSubscriptionStatus {
     string uuid = 1;
-    string code = 2;
     int64 expires_at = 3;       // unix epoch seconds
     string status = 4;          // "granted" | "active" | "expired" | "conflict" | "unknown"
     string message = 5;         // client-facing reason (e.g. the outlet code is taken)
+    string code = 2;
+    // DB-hosting expiry owned by the gateway; ppServer applies it to
+    // availabledb.expiry. Milliseconds since epoch (0 = unknown).
+    int64 db_expires_at = 6;
+    bool db_expiry_forever = 7;
 }
 
 message RegisterRequest {
@@ -168,6 +172,33 @@ message NotificationPush {
     repeated NotifyMessage notifications = 1;
 }
 
+// ppServer → Gateway: the outlet's local billing facts. Sent on connect and
+// periodically so the gateway can show the database-hosting expiry and notify
+// the outlet's admins without a separate privileged RPC or shared secret.
+message BillingOutletInfo {
+    string uuid = 1;
+    string code = 2;
+    string name = 3;
+    string master_db = 4;
+    string trans_db = 5;
+    string group_key = 6;
+    int64 db_expires_at = 7;      // epoch milliseconds (0 = unknown)
+    bool db_expiry_forever = 8;
+    bool db_hosting_enforced = 9;
+    repeated string admin_emails = 10;
+    repeated string payer_emails = 11;
+}
+
+message BillingOutletReport {
+    repeated BillingOutletInfo outlets = 1;
+}
+
+// Gateway → ppServer: apply the gateway-owned DB-hosting expiry. Sent after a
+// paid renewal and also carried by RegisterResponse on reconnect.
+message SubscriptionStatusUpdate {
+    repeated OutletSubscriptionStatus subscriptions = 1;
+}
+
 // ── Tunnel frame ───────────────────────────────────────────────────
 
 message TunnelFrame {
@@ -185,6 +216,8 @@ message TunnelFrame {
         UnsubscribeRequest          unsubscribe                 = 11;  // ppServer → gateway (clear declared set)
         UnsubscribeResponse         unsubscribe_response        = 12;  // gateway → ppServer
         NotificationPush            notification                = 13;  // ppServer → gateway (FCM fan-out)
+        BillingOutletReport         outlet_billing_report       = 14;  // ppServer → gateway (DB expiry + contacts)
+        SubscriptionStatusUpdate    subscription_update         = 15;  // gateway → ppServer (apply DB expiry)
     }
 }
 

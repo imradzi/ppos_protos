@@ -594,43 +594,7 @@ message OutletLocationRecord {
     string outlet_address = 8;       // read-only hint from the master registry
 }
 
-// ── Subscription billing (ppGateway ↔ ppServer) ─────────────────────────
-// One outlet's billing-relevant data. The directory includes expired outlets
-// (the normal GetAllAvailableDB path filters them out).
-message OutletBillingInfo {
-    string uuid = 1;
-    string code = 2;
-    string name = 3;
-    string master_db = 4;
-    string trans_db = 5;
-    string group_key = 6;
-    string owner_email = 7;
-    google.protobuf.Timestamp db_expiry = 8;   // availabledb.expiry (31 Dec 2999 = forever)
-    bool db_expiry_forever = 9;
-    repeated string admin_emails = 10;         // Mobile-Admin — expiry notices
-    repeated string payer_emails = 11;         // every ul_userAllowedDB user — may pay
-    bool db_hosting_enforced = 12;             // false = ppServer --db-hosting=local
-}
-
-message OutletBillingDirectory {
-    repeated OutletBillingInfo outlets = 1;
-}
-
-message RenewDatabaseHostingRequest {
-    string session_key = 1;                    // unused (tunnel-only); kept for symmetry
-    string outlet_uuid = 2;
-    string master_db = 3;                      // fallback when uuid is empty
-    string trans_db = 4;
-    int32 months = 5;                          // 1 or 12
-    string reference = 6;                      // gateway invoice id (idempotency + audit)
-}
-
-message RenewDatabaseHostingResult {
-    bool ok = 1;
-    string message = 2;
-    google.protobuf.Timestamp new_expiry = 3;
-    bool forever = 4;
-}
+// ── Entity types ────────────────────────────────────────────────────────
 enum EntityType {
     ET_User = 0;
     ET_Member = 1;
@@ -1487,11 +1451,6 @@ service Config {
 	// Per-outlet location (GlobalData.db availabledb row). Admin only.
 	rpc GetOutletLocation(OutletLocationRecord) returns (OutletLocationRecord) {}
 	rpc SetOutletLocation(OutletLocationRecord) returns (ReturnStatus) {}
-
-	// Subscription billing (ppGateway only; tunnel-guarded by the
-	// x-ppos-billing-token metadata value configured in ul_keys).
-	rpc GetOutletBillingDirectory(Void) returns (OutletBillingDirectory) {}
-	rpc RenewDatabaseHosting(RenewDatabaseHostingRequest) returns (RenewDatabaseHostingResult) {}
 
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
