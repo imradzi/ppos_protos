@@ -1459,6 +1459,10 @@ service Config {
 
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
+	// Same rows as GetAllAvailableDB but WITHOUT the cloud-hosting expiry
+	// filter: used by the gateway to mirror availabledb.expiry (the single
+	// source of truth) even after an outlet has lapsed. Tunnel-only.
+	rpc GetAllAvailableDBIncludingExpired(Void) returns (AvailableDBList) {}
 	rpc GetAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetMyAvailableDB(Void) returns (AvailableDBList) {} 
 	rpc GetAvailableDB_ByGroupFilter(Void) returns (AvailableDBList) {} 
