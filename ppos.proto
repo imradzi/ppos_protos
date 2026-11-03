@@ -304,6 +304,11 @@ message LoginSessionRecord {
 	string client_app_version=18;
     string system_user=19;
     string working_folder=20;
+    // Database hosting lapsed on this server: the desktop client may only
+    // renew. billing_url is the gateway billing page (outlet preselected).
+    bool subscription_expired=21;
+    google.protobuf.Timestamp subscription_expiry=22;
+    string billing_url=23;
 }
 
 message LoginSessionRecordList {
