@@ -200,6 +200,32 @@ message SubscriptionStatusUpdate {
     repeated OutletSubscriptionStatus subscriptions = 1;
 }
 
+// ── Free trial grant (ppServer → gateway) ──────────────────────────
+
+// The outlet's database hosting lapsed and the owner pressed "Start 1-week free
+// trial" on the desktop renewal screen. The desktop cannot open a session in
+// that state, so it cannot run the normal SubscribeGateway flow either. The
+// gateway declares the outlets and grants a short free SUBSCRIPTION (never DB
+// hosting) so the owner can reach the billing page and pay for the renewal.
+// Granted at most once per outlet — the gateway owns the policy and the length.
+message TunnelTrialRequest {
+    string request_id = 1;      // correlates request ↔ response
+    string server_id = 2;       // ppServer identity (informational)
+    repeated OutletRef outlets = 3;  // outlets to declare (uuid/code/master/trans)
+    int32 days = 4;             // requested length; 0 = the gateway's policy default
+}
+
+message TunnelTrialResponse {
+    string request_id = 1;
+    bool ok = 2;
+    string error_message = 3;   // set when ok == false
+    repeated OutletSubscriptionStatus subscriptions = 4;  // post-grant state
+    int32 granted_days = 5;     // 0 when nothing was granted
+    int64 granted_until = 6;    // unix epoch seconds of the furthest expiry granted
+    string billing_url = 7;     // billing page to open afterwards
+    string message = 8;         // client-facing summary (e.g. "already subscribed")
+}
+
 // ── Tunnel frame ───────────────────────────────────────────────────
 
 message TunnelFrame {
@@ -219,6 +245,8 @@ message TunnelFrame {
         NotificationPush            notification                = 13;  // ppServer → gateway (FCM fan-out)
         BillingOutletReport         outlet_billing_report       = 14;  // ppServer → gateway (DB expiry + contacts)
         SubscriptionStatusUpdate    subscription_update         = 15;  // gateway → ppServer (apply DB expiry)
+        TunnelTrialRequest          trial_request               = 16;  // ppServer → gateway (free trial grant)
+        TunnelTrialResponse         trial_response              = 17;  // gateway → ppServer (grant outcome)
     }
 }
 

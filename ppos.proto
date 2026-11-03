@@ -1363,6 +1363,15 @@ message GatewaySubscribeResult {
     repeated GatewayOutletInfo outlets = 5;  // per-outlet expiry/status after subscribe
     GatewaySettingsRecord settings = 6;      // full updated settings record (same shape as GetGatewaySettings)
     bool verification_email_sent = 7;        // new Firebase account: verification email was requested
+    string billing_url = 8;     // gateway billing page (renewal screen), may be empty
+}
+
+// Free-trial request from the renewal screen. No session key is required: the
+// outlet cannot log in while its database hosting has lapsed.
+message GatewayTrialRequest {
+    string session_key = 1;     // optional (present when the client still holds one)
+    string outlet_code = 2;     // outlet that triggered the renewal screen (empty = every outlet of the group)
+    string endpoint_id = 3;     // "" = primary gateway endpoint
 }
 
 // Cancel the subscription of this server's outlets on one gateway endpoint.
@@ -1413,6 +1422,11 @@ service Auth {
     rpc GetLoginSessionRecordList(LoginSessionRecord) returns (LoginSessionRecordList) {}
     rpc GetGatewaySettings(Void) returns (GatewaySettingsRecord) {}
     rpc SubscribeGateway(GatewaySubscribeRequest) returns (GatewaySubscribeResult) {}
+    // Free trial for an outlet whose hosting lapsed: the desktop renewal screen
+    // cannot open a session, so this call takes no session key. The gateway
+    // declares the outlet and grants a short free gateway subscription so the
+    // owner can reach the billing page and renew. Never extends DB hosting.
+    rpc StartGatewayTrial(GatewayTrialRequest) returns (GatewaySubscribeResult) {}
     // Cancel the subscription (optionally deleting the stored gateway host).
     rpc UnsubscribeGateway(GatewayUnsubscribeRequest) returns (GatewaySubscribeResult) {}
     // Add/update/remove an extra gateway endpoint (admin only).
