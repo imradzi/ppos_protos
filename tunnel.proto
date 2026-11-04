@@ -227,6 +227,29 @@ message TunnelTrialResponse {
     string message = 8;         // client-facing summary (e.g. "already subscribed")
 }
 
+// ── Silent declaration (ppServer → gateway) ────────
+
+// An outlet whose hosting lapsed and that was never declared on the gateway
+// has no subscription row, so the billing page lists nothing and the owner
+// cannot pay. ppServer declares its outlet group here before pointing the
+// desktop at the billing page. Existing rows keep their expiry (no free days
+// are re-granted); this is the same upsert the Gateway Subscription dialog
+// performs, minus the interactive sign-in.
+message TunnelDeclareRequest {
+    string request_id = 1;      // correlates request ↔ response
+    string server_id = 2;       // ppServer identity (informational)
+    repeated OutletRef outlets = 3;  // outlets to declare (uuid/code/master/trans)
+}
+
+message TunnelDeclareResponse {
+    string request_id = 1;
+    bool ok = 2;
+    string error_message = 3;   // set when ok == false
+    repeated OutletSubscriptionStatus subscriptions = 4;  // post-declare state
+    string billing_url = 5;     // billing page to open afterwards
+    string message = 6;         // client-facing summary
+}
+
 // ── Tunnel frame ───────────────────────────────────────────────────
 
 message TunnelFrame {
@@ -248,6 +271,8 @@ message TunnelFrame {
         SubscriptionStatusUpdate    subscription_update         = 15;  // gateway → ppServer (apply DB expiry)
         TunnelTrialRequest          trial_request               = 16;  // ppServer → gateway (free trial grant)
         TunnelTrialResponse         trial_response              = 17;  // gateway → ppServer (grant outcome)
+        TunnelDeclareRequest        declare_request             = 18;  // ppServer → gateway (silent declaration)
+        TunnelDeclareResponse       declare_response            = 19;  // gateway → ppServer (declared set)
     }
 }
 

@@ -1427,6 +1427,12 @@ service Auth {
     // declares the outlet and grants a short free trial (gateway subscription
     // and database hosting), so the outlet is fully usable for the trial period.
     rpc StartGatewayTrial(GatewayTrialRequest) returns (GatewaySubscribeResult) {}
+    // Declare this server's outlet group on the gateway without any user
+    // interaction, so the billing page always lists the outlet (an outlet that
+    // was never subscribed has no gateway row and could never be paid for).
+    // Existing rows keep their expiry — no free days are re-granted — and the
+    // reply carries the billing page to open. Used by "Renew in browser".
+    rpc EnsureGatewaySubscription(GatewayTrialRequest) returns (GatewaySubscribeResult) {}
     // Cancel the subscription (optionally deleting the stored gateway host).
     rpc UnsubscribeGateway(GatewayUnsubscribeRequest) returns (GatewaySubscribeResult) {}
     // Add/update/remove an extra gateway endpoint (admin only).
