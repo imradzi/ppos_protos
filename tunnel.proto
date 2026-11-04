@@ -205,9 +205,10 @@ message SubscriptionStatusUpdate {
 // The outlet's database hosting lapsed and the owner pressed "Start 1-week free
 // trial" on the desktop renewal screen. The desktop cannot open a session in
 // that state, so it cannot run the normal SubscribeGateway flow either. The
-// gateway declares the outlets and grants a short free SUBSCRIPTION (never DB
-// hosting) so the owner can reach the billing page and pay for the renewal.
-// Granted at most once per outlet — the gateway owns the policy and the length.
+// gateway declares the outlets and grants a short free trial — gateway
+// subscription AND database hosting — so the outlet is fully usable (PWA, mall,
+// POS) for the trial period. Granted at most once per outlet; the gateway owns
+// the policy and the length.
 message TunnelTrialRequest {
     string request_id = 1;      // correlates request ↔ response
     string server_id = 2;       // ppServer identity (informational)

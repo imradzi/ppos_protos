@@ -1424,8 +1424,8 @@ service Auth {
     rpc SubscribeGateway(GatewaySubscribeRequest) returns (GatewaySubscribeResult) {}
     // Free trial for an outlet whose hosting lapsed: the desktop renewal screen
     // cannot open a session, so this call takes no session key. The gateway
-    // declares the outlet and grants a short free gateway subscription so the
-    // owner can reach the billing page and renew. Never extends DB hosting.
+    // declares the outlet and grants a short free trial (gateway subscription
+    // and database hosting), so the outlet is fully usable for the trial period.
     rpc StartGatewayTrial(GatewayTrialRequest) returns (GatewaySubscribeResult) {}
     // Cancel the subscription (optionally deleting the stored gateway host).
     rpc UnsubscribeGateway(GatewayUnsubscribeRequest) returns (GatewaySubscribeResult) {}
