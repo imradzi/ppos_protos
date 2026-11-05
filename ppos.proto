@@ -616,6 +616,11 @@ enum EntityType {
     // events (low stock, new mall order, below-cost pricing, backdated cash
     // sales). Appended — never renumber the values above.
     ET_Notify = 11;
+    // Staff role `Mobile-Dashboard`: financial dashboard access (single outlet
+    // and all-outlets portfolio). Deliberately independent of ET_Admin: an
+    // administrator without this role must not see the dashboards.
+    // Appended — never renumber the values above.
+    ET_Dashboard = 12;
 }
 message GetAccessibleDBRequest {
     string email = 1;
