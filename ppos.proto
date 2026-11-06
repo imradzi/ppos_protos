@@ -1663,6 +1663,21 @@ service Payment {
     rpc ReconcilePending(Void) returns (PaymentReconcileResult) {}
     rpc ListPayments(PaymentListRequest) returns (PaymentRecordList) {}
     rpc LinkSale(PaymentLinkSaleRequest) returns (ReturnStatus) {}
+
+    // Payment settlement / fund tracking. Batches group card receipts or
+    // online provider payments against the bank credit that settles them.
+    rpc GetPaymentTracker(PaymentTrackerRequest) returns (PaymentTrackerResult) {}
+    rpc ListSettlementBatches(SettlementBatchListRequest) returns (SettlementBatchList) {}
+    rpc GetSettlementBatch(SettlementBatchGetRequest) returns (SettlementBatchDetail) {}
+    rpc CreateSettlementBatch(SettlementBatchCreateRequest) returns (SettlementBatchCreateResult) {}
+    rpc SettleSettlementBatch(SettlementBatchSettleRequest) returns (SettlementBatchSettleResult) {}
+    rpc CancelSettlementBatch(SettlementBatchCancelRequest) returns (ReturnStatus) {}
+    rpc PreviewSettlementImport(SettlementImportPreviewRequest) returns (SettlementImportPreviewResult) {}
+    rpc CommitSettlementImport(SettlementImportCommitRequest) returns (SettlementImportCommitResult) {}
+    rpc ListSettlementImports(SettlementImportListRequest) returns (SettlementImportListResult) {}
+    rpc ListUnmatchedSettlementRows(SettlementUnmatchedRequest) returns (SettlementUnmatchedResult) {}
+    rpc MatchSettlementRow(SettlementMatchRequest) returns (ReturnStatus) {}
+    rpc UnmatchSettlementRow(SettlementUnmatchRequest) returns (ReturnStatus) {}
 }
 
 service Purchases {
@@ -2509,6 +2524,279 @@ message PaymentLinkSaleRequest {
     string payment_id = 2;
     string order_id = 3;
     string sale_id = 4;
+}
+
+// ── Payment settlement / fund tracking ────────────────────────────────
+// Amounts are in cents. Times are epoch milliseconds so the gateway does not
+// need to translate protobuf Timestamps for the tracker UI.
+
+message PaymentSettlementBatch {
+    int64 id = 1;
+    string kind = 2;                 // card | toyyibpay | billplz
+    string provider = 3;
+    string acquirer = 4;
+    int64 paid_by_type_id = 5;
+    int64 from_account_id = 6;
+    int64 to_account_id = 7;
+    string status = 8;               // open|awaiting_bank|partial|settled|variance|cancelled
+    int64 period_from = 9;
+    int64 period_to = 10;
+    int64 gross_amount_cents = 11;
+    int64 fee_amount_cents = 12;
+    int64 expected_net_cents = 13;
+    int64 banked_amount_cents = 14;
+    int64 variance_cents = 15;
+    string bank_ref = 16;
+    int64 bank_date = 17;
+    int64 account_transfer_id = 18;
+    string source = 19;
+    string remark = 20;
+    string created_by = 21;
+    int64 date_created = 22;
+    string updated_by = 23;
+    int64 updated_at = 24;
+    int64 item_count = 25;
+}
+
+message PaymentSettlementItem {
+    int64 id = 1;
+    int64 batch_id = 2;
+    string source_kind = 3;          // sales_receipt | payment_transaction
+    string source_id = 4;
+    int64 source_date = 5;
+    string reference = 6;
+    int64 gross_amount_cents = 7;
+    int64 fee_amount_cents = 8;
+    int64 net_amount_cents = 9;
+}
+
+message SettlementBatchListRequest {
+    wpObject base = 1;
+    int64 from = 2;
+    int64 to = 3;
+    string kind = 4;
+    string status = 5;
+    int32 limit = 6;
+}
+
+message SettlementBatchList {
+    repeated PaymentSettlementBatch batches = 1;
+}
+
+message SettlementBatchGetRequest {
+    wpObject base = 1;
+    int64 batch_id = 2;
+}
+
+message SettlementBatchDetail {
+    PaymentSettlementBatch batch = 1;
+    repeated PaymentSettlementItem items = 2;
+}
+
+message SettlementBatchCreateRequest {
+    wpObject base = 1;
+    string kind = 2;                 // card | toyyibpay | billplz
+    string provider = 3;
+    int64 from = 4;
+    int64 to = 5;
+    string acquirer = 6;
+    string remark = 7;
+}
+
+message SettlementBatchCreateResult {
+    bool ok = 1;
+    string message = 2;
+    SettlementBatchDetail detail = 3;
+    int32 item_count = 4;
+}
+
+message SettlementBatchSettleRequest {
+    wpObject base = 1;
+    int64 batch_id = 2;
+    int64 bank_date = 3;
+    int64 banked_cents = 4;
+    string bank_ref = 5;
+    int64 to_account_id = 6;
+    bool allow_variance = 7;
+}
+
+message SettlementBatchSettleResult {
+    bool ok = 1;
+    string message = 2;
+    PaymentSettlementBatch batch = 3;
+    int64 transfer_id = 4;
+}
+
+message SettlementBatchCancelRequest {
+    wpObject base = 1;
+    int64 batch_id = 2;
+}
+
+message SettlementImportSample {
+    int32 line_no = 1;
+    int64 txn_date = 2;
+    string description = 3;
+    string reference = 4;
+    string bill_ref = 5;
+    string batch_ref = 6;
+    int64 gross_cents = 7;
+    int64 fee_cents = 8;
+    int64 net_cents = 9;
+}
+
+message SettlementImportPreviewRequest {
+    wpObject base = 1;
+    string import_type = 2;          // edc | provider | bank
+    string provider = 3;
+    string file_name = 4;
+    bytes file_content = 5;
+    string mapping_json = 6;
+    string file_hash = 7;
+}
+
+message SettlementImportPreviewResult {
+    bool ok = 1;
+    string message = 2;
+    repeated string headers = 3;
+    string mapping_json = 4;
+    bool duplicate = 5;
+    int32 row_count = 6;
+    int64 total_gross_cents = 7;
+    int64 total_fee_cents = 8;
+    int64 total_net_cents = 9;
+    repeated SettlementImportSample samples = 10;
+}
+
+message SettlementImportCommitRequest {
+    wpObject base = 1;
+    string import_type = 2;
+    string provider = 3;
+    string file_name = 4;
+    bytes file_content = 5;
+    string mapping_json = 6;
+    string file_hash = 7;
+    int64 batch_id = 8;
+    int64 to_account_id = 9;
+}
+
+message SettlementImportCommitResult {
+    bool ok = 1;
+    bool duplicate = 2;
+    string message = 3;
+    int64 import_id = 4;
+    int32 row_count = 5;
+    int32 matched_count = 6;
+    int32 unmatched_count = 7;
+    int32 duplicate_count = 8;
+    repeated int64 batch_ids = 9;
+}
+
+message SettlementImportRecord {
+    int64 id = 1;
+    string file_hash = 2;
+    string file_name = 3;
+    string import_type = 4;
+    string provider = 5;
+    int64 batch_id = 6;
+    int32 row_count = 7;
+    int32 matched_count = 8;
+    int32 unmatched_count = 9;
+    int32 duplicate_count = 10;
+    string status = 11;
+    string created_by = 12;
+    int64 date_created = 13;
+}
+
+message SettlementImportListRequest {
+    wpObject base = 1;
+    int32 limit = 2;
+}
+
+message SettlementImportListResult {
+    repeated SettlementImportRecord imports = 1;
+}
+
+message SettlementImportRow {
+    int64 id = 1;
+    int64 import_id = 2;
+    int32 line_no = 3;
+    int64 txn_date = 4;
+    string description = 5;
+    string reference = 6;
+    string bill_ref = 7;
+    string batch_ref = 8;
+    int64 gross_cents = 9;
+    int64 fee_cents = 10;
+    int64 net_cents = 11;
+    string status = 12;
+    int64 matched_batch_id = 13;
+    string message = 14;
+}
+
+message SettlementUnmatchedRequest {
+    wpObject base = 1;
+    string import_type = 2;
+    int32 limit = 3;
+}
+
+message SettlementUnmatchedResult {
+    repeated SettlementImportRow rows = 1;
+}
+
+message SettlementMatchRequest {
+    wpObject base = 1;
+    int64 import_row_id = 2;
+    int64 batch_id = 3;
+    int64 amount_cents = 4;
+}
+
+message SettlementUnmatchRequest {
+    wpObject base = 1;
+    int64 match_id = 2;
+}
+
+message PaymentTrackerRequest {
+    wpObject base = 1;
+    int64 from = 2;
+    int64 to = 3;
+    int64 as_of = 4;
+}
+
+message PaymentTrackerChannel {
+    string kind = 1;
+    string provider = 2;
+    string label = 3;
+    int64 received_gross_cents = 4;
+    int64 received_fee_cents = 5;
+    int64 received_net_cents = 6;
+    int64 batched_cents = 7;
+    int64 unbatched_cents = 8;
+    int64 banked_cents = 9;
+    int64 in_transit_cents = 10;
+    int64 open_batches = 11;
+    int64 oldest_unbatched_at = 12;
+    bool fee_pending = 13;
+}
+
+message PaymentTrackerPendingBill {
+    string id = 1;
+    string provider = 2;
+    string order_id = 3;
+    string order_ref = 4;
+    string customer_name = 5;
+    string status = 6;
+    int64 amount_cents = 7;
+    int64 created_at = 8;
+    int64 expires_at = 9;
+}
+
+message PaymentTrackerResult {
+    repeated PaymentTrackerChannel channels = 1;
+    repeated PaymentTrackerPendingBill pending_bills = 2;
+    int64 pending_total_cents = 3;
+    int64 expired_total_cents = 4;
+    int32 pending_count = 5;
+    int32 expired_count = 6;
 }
 
 // Complete a SalesOrder placed from the mall: saves a real Sale with a
