@@ -34,6 +34,10 @@ message OutletSubscriptionStatus {
     // availabledb.expiry. Milliseconds since epoch (0 = unknown).
     int64 db_expires_at = 6;
     bool db_expiry_forever = 7;
+    // Operator expiry edit: apply db_expires_at exactly (both directions,
+    // including clearing a "forever" row) instead of the forward-only
+    // renewal rule. Only the gateway's manual adjustment path sets this.
+    bool force = 8;
 }
 
 message RegisterRequest {
