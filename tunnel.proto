@@ -253,7 +253,64 @@ message TunnelDeclareResponse {
     string billing_url = 5;     // billing page to open afterwards
     string message = 6;         // client-facing summary
 }
+// ── Ask Me assistant (ppServer → gateway) ──────────────────────────
 
+// The desktop uses the SAME contract as the PWA's POST /api/ai/ask: one call
+// carrying the question, the structured history and the screen context. The
+// gateway owns the model key and the prompt; ppServer only forwards.
+//
+// `outlet_code` scopes the read-only data tools. It comes from the caller's
+// authenticated ppServer session and is NEVER taken from the model.
+message AiChatMessage {
+    string role = 1;      // client vocabulary: "user" or "ai"
+    string content = 2;
+}
+
+message AiAskRequest {
+    string request_id = 1;
+    string server_id = 2;
+    string user_email = 3;       // from the authenticated ppServer session
+    string outlet_code = 4;      // outlet whose data tools may be used (may be empty)
+    string window_name = 5;      // desktop window class name (e.g. "CashSalesWindow")
+    string context = 6;          // what the user is looking at
+    string question = 7;
+    repeated AiChatMessage history = 8;   // oldest first
+}
+
+message AiAskResponse {
+    string request_id = 1;
+    bool ok = 2;
+    string error_code = 3;       // AI_DISABLED | AI_NO_KEY | AI_QUOTA | AI_UPSTREAM | ...
+    string error_message = 4;
+    string answer = 5;
+    string model_used = 6;
+    int32 tokens_used = 7;
+    int32 remaining_today = 8;   // -1 = unlimited
+}
+
+// Mirrors GET /api/ai/config so the desktop dialog shows the same state as the
+// PWA drawer instead of its own settings.
+message AiConfigRequest {
+    string request_id = 1;
+    string server_id = 2;
+    string user_email = 3;
+    string outlet_code = 4;      // whose subscription gate to report (may be empty)
+}
+
+message AiConfigResponse {
+    string request_id = 1;
+    bool ok = 2;
+    string error_message = 3;
+    bool enabled = 4;
+    string provider = 5;
+    string model = 6;
+    int32 max_history = 7;
+    int32 daily_limit = 8;
+    int32 remaining_today = 9;
+    bool has_api_key = 10;
+    repeated string tools = 11;
+    bool subscribed = 12;        // the outlet has an active gateway subscription
+}
 // ── Tunnel frame ───────────────────────────────────────────────────
 
 message TunnelFrame {
@@ -277,6 +334,10 @@ message TunnelFrame {
         TunnelTrialResponse         trial_response              = 17;  // gateway → ppServer (grant outcome)
         TunnelDeclareRequest        declare_request             = 18;  // ppServer → gateway (silent declaration)
         TunnelDeclareResponse       declare_response            = 19;  // gateway → ppServer (declared set)
+        AiAskRequest                ai_request                  = 20;  // ppServer → gateway (Ask Me)
+        AiAskResponse               ai_response                 = 21;  // gateway → ppServer
+        AiConfigRequest             ai_config_request           = 22;  // ppServer → gateway (assistant settings)
+        AiConfigResponse            ai_config_response          = 23;  // gateway → ppServer
     }
 }
 

@@ -1968,12 +1968,19 @@ message StockSearchResultList {
     repeated StockSearchResultItem items = 4;
 }
 
+message InvestigationMessage {
+    string role = 1;         // client vocabulary: "user" or "ai"
+    string content = 2;
+}
+
 message InvestigationRequest {
     wpObject base = 1;
     string question = 2;
     string context = 3;             // optional background/context for the AI
     string conversation_id = 4;     // for multi-turn conversation continuity
     string provider_name = 5;       // which AI provider to use (empty = default)
+    string window_name = 6;         // desktop window class name (screen context)
+    repeated InvestigationMessage history = 7;  // structured turns, oldest first
 }
 
 message InvestigationResponse {
