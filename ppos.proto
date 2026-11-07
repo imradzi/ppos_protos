@@ -1786,6 +1786,7 @@ service Stock {
     rpc GetAllMallListings(Void) returns (MallServerCatalog) {}          // every outlet of this server (gateway sync)
     rpc GetMallCatalogItems(MallCatalogRequest) returns (MallCatalogItemList) {}  // authoritative read for checkout
     rpc GetMallScanItem(StringData) returns (MallCatalogItem) {}         // barcode -> item (in-store scanning)
+    rpc GetMallScanItemForShopper(MallScanRequest) returns (MallCatalogItem) {}  // scan priced for the signed-in shopper
 
 }
 
@@ -1812,6 +1813,9 @@ service Membership {
     // An unknown email is created on the fly when shopper_type + name are
     // supplied (the mall asks for name, company name, address, telephone).
     rpc ResolveMallShopper(MallShopperRequest) returns (MallShopperRecord) {}
+    // Server-level pricing tiers for one shopper across its outlets (gateway
+    // catalogue personalisation). Lookup-only, no POS session required.
+    rpc GetMallShopperTiers(MallShopperTiersRequest) returns (MallShopperTiers) {}
 
 	// Paginated search
 	rpc GetMembershipList(MembershipListRequest) returns (MembershipListRecord) {}
@@ -2292,6 +2296,17 @@ message MallListingList {
 message MallCatalogRequest {
     wpObject base = 1;
     repeated string stock_ids = 2;
+    // Optional shopper identity: when set, prices are resolved for this
+    // member/wholesale customer (member price / assigned price category).
+    string email = 3;
+    string shopper_type = 4;    // "member" | "customer" | "" (resolve by email)
+}
+
+message MallScanRequest {
+    wpObject base = 1;
+    string barcode = 2;
+    string email = 3;           // optional shopper identity (see MallCatalogRequest)
+    string shopper_type = 4;
 }
 
 message MallCatalogItem {
@@ -2856,6 +2871,33 @@ message MallShopperRecord {
     string address = 10;
     string phone = 11;
     string email = 12;
+    // Pricing tier of the record: the price category assigned in the POS
+    // (EntityAttributes under PriceCategoryGroupID). Empty = no category.
+    string price_category_id = 13;
+    string price_category_name = 14;
+}
+
+// Per-outlet pricing tier of one shopper email, used by the gateway to
+// personalise the cached mall catalogue.
+message MallShopperTier {
+    string outlet_uuid = 1;
+    string code = 2;
+    bool is_member = 3;
+    bool is_customer = 4;
+    string price_category_id = 5;
+    string price_category_name = 6;
+}
+
+message MallShopperTiersRequest {
+    wpObject base = 1;
+    string email = 2;
+    // Optional filter: only resolve these outlet uuids (empty = all outlets).
+    repeated string outlet_uuids = 3;
+}
+
+message MallShopperTiers {
+    wpObject base = 1;
+    repeated MallShopperTier tiers = 2;
 }
 
 // One line of a mall order sent to the counter.
