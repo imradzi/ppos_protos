@@ -1547,6 +1547,7 @@ service Config {
 	rpc UndeleteEntityRecord(EntityRecord) returns (Void) {}
 	rpc RunServerSideCommand(MenuActionParam) returns (stream BinaryData) {}
 	rpc RunServerSideCommandDownloadLink(MenuActionParam) returns (ReturnStatus) {}
+	rpc RequestInstallerUpdate(Void) returns (ReturnStatus) {}
 
 	rpc GetTerminal(TerminalRecord) returns (TerminalRecord) {}
 	rpc SetTerminal(TerminalRecord) returns (TerminalRecord) {}
