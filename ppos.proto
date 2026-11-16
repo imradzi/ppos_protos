@@ -1548,6 +1548,9 @@ service Config {
 	rpc RunServerSideCommand(MenuActionParam) returns (stream BinaryData) {}
 	rpc RunServerSideCommandDownloadLink(MenuActionParam) returns (ReturnStatus) {}
 	rpc RequestInstallerUpdate(Void) returns (ReturnStatus) {}
+	// Full Markdown changelog cached with the last update notice. id=1 with the
+	// file in description, id=0 when no release notes have been downloaded.
+	rpc GetUpdateChangelog(Void) returns (ReturnStatus) {}
 
 	rpc GetTerminal(TerminalRecord) returns (TerminalRecord) {}
 	rpc SetTerminal(TerminalRecord) returns (TerminalRecord) {}
