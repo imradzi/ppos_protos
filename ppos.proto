@@ -201,6 +201,79 @@ message StockReceiveBatchList {
     repeated StockReceiveBatch list=2;
 }
 
+// ── Assembly (produce / cook / manufacture) ─────────────────────────────
+// An assembly *is* a stock item that carries the `entityTypeAssembly`
+// attribute and a bill of materials in AssemblyItem. A run consumes the
+// "input" lines and produces the "output" lines, distributing the input
+// cost over the outputs by cost_factor.
+//
+// direction: 1 = input (consumed), 2 = output (produced).
+message AssemblyItemRecord {
+    wpObject base=1;
+    string stock_id=2;
+    PackingRecord pack=3;
+    double quantity=4;       // in pack units
+    double cost_factor=5;    // weight used to distribute the input cost
+    int32 seq_no=6;
+    string stock_code=7;
+    string stock_name=8;
+    double qoh=9;            // current loose qoh (preview only)
+    double unit_cost=10;     // weighted avg cost, loose (preview only)
+    double loose_quantity=11;  // quantity * packsize * multiplier (preview only)
+    double cost_value=12;      // distributed cost for this line (preview only)
+    google.protobuf.Timestamp expiry_date=13;  // outputs only, entered by the user
+    string batch_no=14;                        // outputs only, auto-generated when blank
+}
+
+message AssemblyRecord {
+    StockRecord base=1;
+    repeated AssemblyItemRecord input_list=2;
+    repeated AssemblyItemRecord output_list=3;
+    bool is_deleted=4;
+    string message=5;
+}
+
+message AssemblyList {
+    wpObject base=1;
+    repeated AssemblyRecord list=2;
+}
+
+message AssemblyRunLineRecord {
+    string assembly_id=1;
+    string assembly_code=2;
+    string assembly_name=3;
+    double quantity=4;      // multiplier
+    double costprice=5;     // cost of one run
+    double amount=6;        // costprice * quantity
+    repeated AssemblyItemRecord input_list=7;
+    repeated AssemblyItemRecord output_list=8;
+}
+
+message AssemblyRunRecord {
+    wpObject base=1;
+    string id=2;
+    string description=3;
+    google.protobuf.Timestamp transaction_date=4;
+    PersonRecord operator=5;
+    double total_amount=6;
+    repeated AssemblyRunLineRecord lines=7;
+    bool is_deleted=8;
+    string deleted_by=9;
+    string delete_reason=10;
+    google.protobuf.Timestamp date_deleted=11;
+    string message=12;
+}
+
+message AssemblyRunList {
+    wpObject base=1;
+    google.protobuf.Timestamp from_date=2;
+    google.protobuf.Timestamp to_date=3;
+    string assembly_id=4;
+    repeated AssemblyRunRecord list=5;
+    int32 limit=6;
+    int32 offset=7;
+}
+
 message StockTransactionRecord {
     StockRecord base=1;
     string pack=2;
@@ -1766,6 +1839,17 @@ service Stock {
     rpc GetStockSupplierRecord(HistoricalPurchaseRecordList) returns (HistoricalPurchaseRecordList) {}
 	rpc IsTransactionExistForPackType(StockRecord) returns (ReturnStatus) {}
 	rpc IsBarcodeExists(SearchItem) returns (ReturnStatus) {}
+
+	// ── Assembly (produce / cook / manufacture) ────────────────────────
+	rpc GetAssemblyRecord(AssemblyRecord) returns (AssemblyRecord) {}
+	rpc SetAssemblyRecord(AssemblyRecord) returns (AssemblyRecord) {}
+	rpc DeleteAssemblyRecord(AssemblyRecord) returns (ReturnStatus) {}
+	rpc GetSearchAssemblyList(AssemblyList) returns (AssemblyList) {}
+	rpc PreviewAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
+	rpc SetAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
+	rpc DeleteAssemblyRun(AssemblyRunRecord) returns (ReturnStatus) {}
+	rpc GetAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
+	rpc GetAssemblyRunList(AssemblyRunList) returns (AssemblyRunList) {}
 	rpc GetStockInventoryStatusRecord(InventoryStatusRecordList) returns (InventoryStatusRecordList) {}
 	rpc GetStockInventoryStatusRecordByOutlet(InventoryStatusRecordByOutletList) returns (InventoryStatusRecordByOutletList) {}
     rpc GetAnnualSalesSummary(Series) returns (Series) {}
