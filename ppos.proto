@@ -254,7 +254,7 @@ message AssemblyRunRecord {
     string id=2;
     string description=3;
     google.protobuf.Timestamp transaction_date=4;
-    PersonRecord operator=5;
+    PersonRecord operator_person=5;
     double total_amount=6;
     repeated AssemblyRunLineRecord lines=7;
     bool is_deleted=8;
