@@ -262,6 +262,7 @@ message AssemblyRunRecord {
     string delete_reason=10;
     google.protobuf.Timestamp date_deleted=11;
     string message=12;
+    bool is_suspended=13;   // held job: lines saved, nothing posted to stock
 }
 
 message AssemblyRunList {
@@ -272,6 +273,7 @@ message AssemblyRunList {
     repeated AssemblyRunRecord list=5;
     int32 limit=6;
     int32 offset=7;
+    bool suspended_only=8;  // true = only held jobs, false/absent = only posted runs
 }
 
 message StockTransactionRecord {
@@ -719,6 +721,7 @@ message InterchangeData {
 message StringData {
 	string session_key = 1;
 	string string = 2;
+	bool assembly_only = 3;               // GetSearchStockList: only items with a bill of materials
 }
 
 message IdParameterWithRating {
@@ -2047,6 +2050,7 @@ message StockSearchResultItem {
     // All image URLs for the carousel (image 0, 1, 2, ...)
     repeated string all_image_urls = 11;        // full image paths for DownloadFile
     repeated string all_thumbnail_urls = 12;    // thumbnail paths for DownloadFile
+    bool is_assembly = 13;                // item has bill-of-materials rows (AssemblyItem)
 }
 
 message StockSearchResultList {
