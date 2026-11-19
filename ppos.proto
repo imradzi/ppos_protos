@@ -268,6 +268,7 @@ message AssemblyRunRecord {
     string message=12;
     bool is_suspended=13;   // held job: lines saved, nothing posted to stock
     PersonRecord customer_person=14;  // who the job is for (opscustomer)
+    string sales_id=15;     // the sales invoice raised from this job
 }
 
 message AssemblyRunList {
