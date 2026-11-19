@@ -202,8 +202,8 @@ message StockReceiveBatchList {
 }
 
 // ── Assembly (produce / cook / manufacture) ─────────────────────────────
-// An assembly *is* a stock item that carries the `entityTypeAssembly`
-// attribute and a bill of materials in AssemblyItem. A run consumes the
+// An assembly *is* a stock item with bill-of-materials rows in AssemblyItem
+// (having lines is the only marker). A run consumes the
 // "input" lines and produces the "output" lines, distributing the input
 // cost over the outputs by cost_factor.
 //
