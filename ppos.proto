@@ -231,6 +231,10 @@ message AssemblyRecord {
     repeated AssemblyItemRecord output_list=3;
     bool is_deleted=4;
     string message=5;
+    // Converting an item that still has a sale-time component list into an
+    // assembly deletes those components; the client sets this once the user
+    // confirmed the conversion.
+    bool replace_components=6;
 }
 
 message AssemblyList {
@@ -263,6 +267,7 @@ message AssemblyRunRecord {
     google.protobuf.Timestamp date_deleted=11;
     string message=12;
     bool is_suspended=13;   // held job: lines saved, nothing posted to stock
+    PersonRecord customer_person=14;  // who the job is for (opscustomer)
 }
 
 message AssemblyRunList {
@@ -1851,6 +1856,9 @@ service Stock {
 	rpc PreviewAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
 	rpc SetAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
 	rpc DeleteAssemblyRun(AssemblyRunRecord) returns (ReturnStatus) {}
+	// Tag a job with the sales invoice raised from it (the invoice keeps the
+	// back-link in SalesHeader.customerPurchaseId).
+	rpc LinkAssemblyRunSale(AssemblyRunRecord) returns (AssemblyRunRecord) {}
 	rpc GetAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
 	rpc GetAssemblyRunList(AssemblyRunList) returns (AssemblyRunList) {}
 	rpc GetStockInventoryStatusRecord(InventoryStatusRecordList) returns (InventoryStatusRecordList) {}
