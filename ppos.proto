@@ -702,6 +702,13 @@ enum EntityType {
     // administrator without this role must not see the dashboards.
     // Appended — never renumber the values above.
     ET_Dashboard = 12;
+    // Staff role `Mobile-Accounting`: access to the PWA Accounting feature
+    // (per-outlet hub + Chart Of Account) and to the consolidated accounting
+    // report across every outlet where the user holds this role. Deliberately
+    // independent of ET_Admin: an administrator without this role must not see
+    // any accounting screen.
+    // Appended — never renumber the values above.
+    ET_Accounting = 13;
 }
 message GetAccessibleDBRequest {
     string email = 1;
