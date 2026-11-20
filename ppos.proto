@@ -2435,6 +2435,7 @@ message MallCatalogItem {
     double price = 15;                          // listed pack selling price (0 when not listed)
     bool purchasable = 16;                      // false for poison / pseudo-poison / non-stock items
     repeated string category_ids = 17;           // gateway taxonomy subcategory ids
+    bool is_assembly = 18;                       // has a bill of materials: can be made to order
 }
 
 message MallCatalogItemList {
