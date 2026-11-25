@@ -269,6 +269,14 @@ message AssemblyRunRecord {
     bool is_suspended=13;   // held job: lines saved, nothing posted to stock
     PersonRecord customer_person=14;  // who the job is for (opscustomer)
     string sales_id=15;     // the sales invoice raised from this job
+    // Date the finished job is handed to the customer (mall collection date).
+    // Local midnight, epoch ms on the wire. Absent/zero = no promised date.
+    // One job run consumes one delivery slot on its date + slot (see
+    // DeliverySlotRequest / ServerKeyRecord.am_job_runs, pm_job_runs).
+    google.protobuf.Timestamp deliver_date=16;
+    // Which half of that day: "am" (morning) or "pm" (evening). Empty on a job
+    // that has a date is treated as "am" so it still consumes capacity.
+    string deliver_slot=17;
 }
 
 message AssemblyRunList {
@@ -280,6 +288,11 @@ message AssemblyRunList {
     int32 limit=6;
     int32 offset=7;
     bool suspended_only=8;  // true = only held jobs, false/absent = only posted runs
+    // Calendar/planning view: select by the DELIVER date instead of the run
+    // date, returning both held and posted runs (a job is not delivered until
+    // it is posted, so a planner needs to see both).
+    google.protobuf.Timestamp deliver_from=9;
+    google.protobuf.Timestamp deliver_to=10;
 }
 
 message StockTransactionRecord {
@@ -1613,6 +1626,13 @@ service Config {
 	rpc GetOutletLocation(OutletLocationRecord) returns (OutletLocationRecord) {}
 	rpc SetOutletLocation(OutletLocationRecord) returns (ReturnStatus) {}
 
+	// Per-outlet delivery capacity for assembly job runs (mall make-to-order).
+	// SetDeliverySettings goes through SetServerKey internally so it persists
+	// the keys, refreshes the cached ServerKeyRecord and broadcasts
+	// "serverkey_updated" to every connected terminal.
+	rpc GetDeliverySettings(DeliverySettingsRecord) returns (DeliverySettingsRecord) {}
+	rpc SetDeliverySettings(DeliverySettingsRecord) returns (ReturnStatus) {}
+
     rpc GetHostList(Void) returns (HostList) {}
     rpc GetAllAvailableDB(Void) returns (AvailableDBList) {}
 	// Same rows as GetAllAvailableDB but WITHOUT the cloud-hosting expiry
@@ -1869,6 +1889,10 @@ service Stock {
 	rpc LinkAssemblyRunSale(AssemblyRunRecord) returns (AssemblyRunRecord) {}
 	rpc GetAssemblyRun(AssemblyRunRecord) returns (AssemblyRunRecord) {}
 	rpc GetAssemblyRunList(AssemblyRunList) returns (AssemblyRunList) {}
+	// Per-day delivery capacity: job runs already booked on each date of the
+	// booking horizon (job runs + pending mall orders), so the mall can disable
+	// the dates that are full.
+	rpc GetDeliverySlots(DeliverySlotRequest) returns (DeliverySlotList) {}
 	rpc GetStockInventoryStatusRecord(InventoryStatusRecordList) returns (InventoryStatusRecordList) {}
 	rpc GetStockInventoryStatusRecordByOutlet(InventoryStatusRecordByOutletList) returns (InventoryStatusRecordByOutletList) {}
     rpc GetAnnualSalesSummary(Series) returns (Series) {}
@@ -2383,6 +2407,51 @@ message ServerKeyRecord {
     string pharmacist_name = 200;
     string pharmacist_ic = 201;
     string pharmacist_reg_no = 202;
+
+    // 25 Nov 2026 - mall delivery capacity for make-to-order job runs.
+    // Two collection windows per day, each with its own capacity.
+    // 0 = unlimited for that window.
+    int32 am_job_runs = 203;
+    int32 pm_job_runs = 204;
+    // How many days ahead the mall may offer a collection date (1..60).
+    int32 booking_horizon_days = 205;
+}
+
+// ── Delivery capacity (job runs) ──────────────────────────────────────
+// An outlet can only produce so many assembly job runs per morning and per
+// evening. The mall offers the next `booking_horizon_days` dates and blocks a
+// date+window whose capacity is used up by existing job runs plus pending mall
+// orders. Slots are counted in the transaction db; a pending mall order holds a
+// reservation until the sale creates the job run (or is cancelled).
+
+message DeliverySettingsRecord {
+    wpObject base = 1;
+    int32 am_job_runs = 2;            // morning capacity, 0 = unlimited
+    int32 pm_job_runs = 3;            // evening capacity, 0 = unlimited
+    int32 booking_horizon_days = 4;   // days offered to the mall (1..60)
+}
+
+message DeliverySlotRequest {
+    wpObject base = 1;
+    int32 days = 2;                   // 0 = use booking_horizon_days
+}
+
+/** Capacity of one collection window ("am" / "pm") on one day. */
+message DeliverySlotPart {
+    string slot = 1;                  // "am" | "pm"
+    int32 capacity = 2;               // 0 = unlimited
+    int32 booked = 3;                 // job runs + pending mall orders
+    int32 remaining = 4;              // -1 when unlimited
+    bool full = 5;
+}
+
+message DeliverySlotDay {
+    google.protobuf.Timestamp date = 1;  // local midnight, epoch ms
+    repeated DeliverySlotPart slots = 2; // always "am" then "pm"
+}
+
+message DeliverySlotList {
+    repeated DeliverySlotDay days = 1;
 }
 
 // ── Mall (mall.pharmapos.com) ──────────────────────────────────────────
@@ -3131,6 +3200,11 @@ message MallOrderRecord {
     google.protobuf.Timestamp paid_at = 22;
     google.protobuf.Timestamp cancelled_at = 23;
     string message = 24;            // rejection reason / last note
+    // Collection/delivery date the shopper picked for a make-to-order cart.
+    // Local midnight, epoch ms. Zero = no promised date.
+    google.protobuf.Timestamp deliver_date = 25;
+    // "am" (morning) or "pm" (evening) — each has its own daily capacity.
+    string deliver_slot = 26;
 }
 
 // Place a mall order at the outlet: validates the lines, saves the counter
@@ -3148,6 +3222,10 @@ message MallOrderPlaceResult {
     string message = 2;             // reason when ok=false
     bool needs_profile = 3;         // shopper must choose member/customer or fill the form
     MallOrderRecord order = 4;      // stored record (hold_id / total / status)
+    // ok=false because the requested deliver date has no job-run capacity left.
+    // The gateway answers 409 DELIVERY_DATE_FULL so the mall re-opens the date
+    // picker instead of treating the order as rejected.
+    bool delivery_full = 5;
 }
 
 message MallOrderGetRequest {
