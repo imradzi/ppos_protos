@@ -2413,27 +2413,29 @@ message ServerKeyRecord {
     // 0 = unlimited for that window.
     int32 am_job_runs = 203;
     int32 pm_job_runs = 204;
-    // How many days ahead the mall may offer a collection date (1..60).
-    int32 booking_horizon_days = 205;
+    // Lead time: the earliest collection date the mall may offer, as an offset
+    // from today (0 = today, 1 = tomorrow, …; 0..60).
+    int32 earliest_delivery_days = 205;
 }
 
 // ── Delivery capacity (job runs) ──────────────────────────────────────
 // An outlet can only produce so many assembly job runs per morning and per
-// evening. The mall offers the next `booking_horizon_days` dates and blocks a
-// date+window whose capacity is used up by existing job runs plus pending mall
-// orders. Slots are counted in the transaction db; a pending mall order holds a
-// reservation until the sale creates the job run (or is cancelled).
+// evening. The mall offers dates from `earliest_delivery_days` onwards and
+// blocks a date+window whose capacity is used up by existing job runs plus
+// pending mall orders. Slots are counted in the transaction db; a pending mall
+// order holds a reservation until the sale creates the job run (or is
+// cancelled).
 
 message DeliverySettingsRecord {
     wpObject base = 1;
-    int32 am_job_runs = 2;            // morning capacity, 0 = unlimited
-    int32 pm_job_runs = 3;            // evening capacity, 0 = unlimited
-    int32 booking_horizon_days = 4;   // days offered to the mall (1..60)
+    int32 am_job_runs = 2;              // morning capacity, 0 = unlimited
+    int32 pm_job_runs = 3;              // evening capacity, 0 = unlimited
+    int32 earliest_delivery_days = 4;   // earliest collection date, +N days (0..60)
 }
 
 message DeliverySlotRequest {
     wpObject base = 1;
-    int32 days = 2;                   // 0 = use booking_horizon_days
+    int32 days = 2;                     // how many days to return (0 = default)
 }
 
 /** Capacity of one collection window ("am" / "pm") on one day. */
