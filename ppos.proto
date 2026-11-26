@@ -318,6 +318,9 @@ message StockTransactionRecord {
     string instruction=20;
     bool update_all_selling_price=21;
     double pack_size=22; // for stock with pack size
+    // Recurring-order template line: shelf life in days applied to the expiry of
+    // a produced assembly output (0 = none). Ignored on normal sale lines.
+    int32 shelf_life_days=23;
 }
 
 message HistoricalStockRecord {
@@ -989,6 +992,19 @@ message SalesRecord {
     // "self-service" (in-store scan & go) or "desktop" (cashier POS, incl. the
     // staff PWA). Empty on legacy rows = "desktop". Immutable after creation.
     string origin=27;
+
+    // ── Recurring wholesale order template (method "recurring") ────────────
+    // A template is a normal sales document per type: it never moves stock and
+    // never reserves it. Every day at recurring_time the server generates ONE
+    // held wholesale order (SuspendedSales) from it; the operator reviews and
+    // submits it, which auto-produces the assemblies it carries.
+    string recurring_time=28;              // "HH:MM" local, empty = 00:00
+    bool recurring_active=29;              // generate one held order per day
+    google.protobuf.Timestamp recurring_last_run=30;  // local midnight of the last copy
+    string recurring_last_run_id=31;       // the SuspendedSales id generated last
+    string recurring_last_error=32;        // last failure, cleared on success
+    string recurring_source_id=33;         // template behind a generated held order
+    bool auto_produce=34;                  // submit: post the assembly runs
 }
 
 message SalesRecordList {
@@ -1715,6 +1731,18 @@ service Sales {
     rpc GetLatestSalesRecord(HistoricalStockRecordList) returns (HistoricalStockRecordList) {}
 	rpc GetSalesSummary(RequestInfoRecord)  returns (stream BinaryData){}
 	rpc GetSalesSummaryDownloadLink(RequestInfoRecord)  returns (ReturnStatus){}
+
+    // ── Recurring wholesale orders (a daily held order from a template) ──
+    // The template itself is a normal sales document: create/read/update/delete
+    // it through SaveSales / GetSalesList / GetSalesDetail / DeleteSales with
+    // base.method = "recurring" (TableType::RecurringSales). These two RPCs
+    // generate the held order:
+    //   RunRecurringOrder     — id = template id, generates today's hold now
+    //                           (returns the SuspendedSales record);
+    //   RunDueRecurringOrders — catch up on every due template of the outlet
+    //                           (the server clock tick calls the same code).
+    rpc RunRecurringOrder(SalesRecord) returns (SalesRecord) {}
+    rpc RunDueRecurringOrders(wpObject) returns (ReturnStatus) {}
 
     rpc Submit_eInvoice(IDList) returns (ReturnStatus){}
     rpc Cancel_eInvoice(IDList) returns (ReturnStatus){}
